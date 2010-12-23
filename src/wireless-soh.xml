@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
+	<name>devroam</name>
+	<SSIDConfig>
+		<SSID>
+			<hex>646576726F616D</hex>
+			<name>devroam</name>
+		</SSID>
+	</SSIDConfig>
+	<connectionType>ESS</connectionType>
+	<MSM>
+		<security>
+			<authEncryption>
+				<authentication>WPA2</authentication>
+				<encryption>AES</encryption>
+				<useOneX>true</useOneX>
+			</authEncryption>
+			<OneX xmlns="http://www.microsoft.com/networking/OneX/v1">
+		                <singleSignOn>
+					<type>preLogon</type>
+		                	<maxDelay>15</maxDelay>
+                		</singleSignOn>
+
+				<authMode>user</authMode>
+				<EAPConfig>
+					<EapHostConfig xmlns="http://www.microsoft.com/provisioning/EapHostConfig">
+						<EapMethod>
+							<Type xmlns="http://www.microsoft.com/provisioning/EapCommon">25</Type>
+							<VendorId xmlns="http://www.microsoft.com/provisioning/EapCommon">0</VendorId>
+							<VendorType xmlns="http://www.microsoft.com/provisioning/EapCommon">0</VendorType>
+							<AuthorId xmlns="http://www.microsoft.com/provisioning/EapCommon">0</AuthorId>
+						</EapMethod>
+						<ConfigBlob>010000003E000000010000000900000001000000150000001700000000000000000001000000170000001A00000001000000000000000000000000000000</ConfigBlob>
+					</EapHostConfig>
+				</EAPConfig>
+			</OneX>
+		</security>
+	</MSM>
+</WLANProfile>

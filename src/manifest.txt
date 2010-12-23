@@ -1,0 +1,21 @@
+At the moment you will need to add the XML manifest below to the exe manually, after compilation.
+
+There is a mt.exe with the Windows SDK to allow this, but it failes with some autoit code.
+So i used ResHacker to add it. Not great, but it works and stops the PAC issues.
+
+
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false"></requestedExecutionLevel>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity type="win32" name="Swansea.University.su1x" version="1.0.6.0" language="*" processorArchitecture="*" publicKeyToken="6595b64144ccf1df"></assemblyIdentity>
+<description>SU1X Wireless Config</description> 
+    </dependentAssembly>
+  </dependency>
+</assembly>
