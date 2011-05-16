@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=1.8.0.7
+#AutoIt3Wrapper_Res_Fileversion=1.9.0.6
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -38,6 +38,19 @@
 ; To save time, makes use of wirelss API interface by MattyD (http://www.autoitscript.com/forum/index.php?showtopic=91018&st=0)
 ;
 ; ****** Change log
+;
+; **16/05/2011
+;	Added support for sending problem reports to a web server
+;	Added support for sending ldap_login tests to a web server
+;	See web_support.txt for info on the web support options
+;
+; **29/01/2011
+;  Added support for multiple profile instalation
+;
+; **27/01/2011
+;  Added GUI display options
+;  Fixed bug with mac address lookup
+;  Fixed bug with getprofile and some wireless cards
 ;
 ;  **13/12/10
 ;  Added Wired support for 802.1x profile on 802.3
@@ -77,9 +90,7 @@
 ; Global variables and stuff
 
 
-
-
-$VERSION = "V1.8"
+$VERSION = "V1.9"
 
 ;Check for config File
 If (FileExists("config.ini") ==0) Then
@@ -96,6 +107,8 @@ $USESPLASH = IniRead("config.ini", "su1x", "USESPLASH", "0")
 $wired_xmlfile = IniRead("config.ini", "su1x", "wiredXMLfile", "Wired_Profile.xml")
 $xmlfile = IniRead("config.ini", "su1x", "xmlfile", "exported.xml")
 $xmlfile_wpa = IniRead("config.ini", "su1x", "xmlfile_wpa", "exported-wpa.xml")
+$xmlfile_additional = IniRead("config.ini", "su1x", "xmlfile_additional", "wireless-wpa.xml")
+$tryadditional_profile= IniRead("config.ini", "su1x", "tryadditional_profile", "0")
 $xmlfile7 = IniRead("config.ini", "su1x", "xmlfile7", "exported-7.xml")
 $xmlfile7_wpa = IniRead("config.ini", "su1x", "xmlfile7_wpa", "exported-7-wpa.xml")
 $xmlfilexpsp2 = IniRead("config.ini", "su1x", "xmlfilexpsp2", "exported-sp2.xml")
@@ -111,6 +124,8 @@ $browser_reset = IniRead("config.ini", "su1x", "browser_reset", "0")
 ;$SSID = IniRead("config.ini", "getprofile", "ssid", "eduroam")
 $priority = IniRead("config.ini", "getprofile", "priority", "0")
 $nap = IniRead("config.ini", "su1x", "nap", "0")
+$showup = IniRead("config.ini", "su1x", "showup", "0")
+$showuptick = IniRead("config.ini", "su1x", "showtick", "0")
 
 ;----Printing
 $show_printing = IniRead("config.ini", "print", "printing", "0")
@@ -133,19 +148,28 @@ $vista_connected = IniRead("config.ini", "images", "vista_connected", "connected
 
 ;-----SSID
 $SSID = IniRead("config.ini", "getprofile", "ssid", "eduroam")
+$SSID_Additional = IniRead("config.ini", "getprofile", "ssid_additional", "eduroam-wpa")
+
 ;-----SSID to remove
 $removessid = IniRead("config.ini", "remove", "removessid", "0")
 $SSID1 = IniRead("config.ini", "remove", "ssid1", "eduroam")
 $SSID2 = IniRead("config.ini", "remove", "ssid2", "eduroam-setup")
 $SSID3 = IniRead("config.ini", "remove", "ssid3", "unrioam")
+
 ;------Certificates
 $certificate = IniRead("config.ini", "certs", "cert", "mycert.cer")
 $use_cert = IniRead("config.ini", "certs", "usecert", "0")
+
 ;------Support
 $show_support = IniRead("config.ini", "support", "show_support", "0")
 $send_ldap = IniRead("config.ini", "support", "send_ldap", "0")
 $send_problem = IniRead("config.ini", "support", "send_problem", "0")
 $dump_to_file = IniRead("config.ini", "support", "dump_to_file", "0")
+$ldap_url = IniRead("config.ini", "support", "ldap_url", "0")
+$regtest_url = IniRead("config.ini", "support", "regtest_url", "0")
+$sendsupport_url = IniRead("config.ini", "support", "sendsupport_url", "0")
+$sendsupport_dept = IniRead("config.ini", "support", "sendsupport_dept", "0")
+
 
 ;---------initialise vairables
 dim $user
@@ -184,7 +208,7 @@ dim $file
 ;Functions
 
 Func DoDebug($text)
-	If $DEBUG == 1 or $dump_to_file==1 Then
+	If $DEBUG == 1 AND $dump_to_file==1 Then
 		BlockInput (0)
 		SplashOff()
 		$debugResult = $debugResult & @CRLF  & $text
@@ -214,7 +238,7 @@ Func _GetMACFromIP ($sIP)
         If IsObj($colItems) Then
             For $objItem In $colItems
 				if ($objItem.AdapterType == "Ethernet 802.3") Then
-				if (StringInStr($objItem.description,"Wi") OR StringInStr($objItem.description,"Wireless")) Then
+				if (StringInStr($objItem.description,"Wi") OR StringInStr($objItem.description,"Wireless") OR StringInStr($objItem.description,"802.11")) Then
 				DoDebug("[support]802.3 Adapter mac address found" & $objItem.MACAddress)
 				$mac&=$objItem.MACAddress
 				$adapter=""
@@ -322,7 +346,7 @@ EndFunc
 Func SetPriority($hClientHandle, $pGUID, $thessid, $priority)
 	$setpriority = DllCall($WLANAPIDLL, "dword", "WlanSetProfilePosition", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $thessid ,"dword", $priority, "ptr", 0)
 	if ($setpriority[0]>0) Then
-		UpdateOutput("Error: Return code invalid for profile priority")
+		UpdateOutput("Error: Return code invalid for profile "& $thessid &" priority" & $priority)
 	EndIf
 EndFunc
 
@@ -395,16 +419,23 @@ GUICreate($title, 294, 310)
 GUISetBkColor (0xffffff) ;---------------------------------white
 ;GUICtrlCreateLabel("Select Tab Below for Options:", 10, 65)
 $n=GUICtrlCreatePic($BANNER,0,0, 294,54) ;--------pic
-$myedit=GUICtrlCreateEdit ($startText& @CRLF, 10,70,270,70,$ES_MULTILINE+$ES_AUTOVSCROLL+$WS_VSCROLL+$ES_READONLY)
-GUICtrlCreateLabel("Username:", 10, 145,60,20)
-GUICtrlCreateLabel("Password:", 165, 145,60,20)
-$userbutton=GUICtrlCreateInput ($username,10,160,150,20)
-$passbutton=GUICtrlCreateInput ("password",165,160,120,20,BitOR($GUI_SS_DEFAULT_INPUT, $ES_PASSWORD))
-;$passbutton=GUICtrlCreateInput ("password",165,160,120)
-GUICtrlSendMsg($passbutton, 0x00CC, 42, 0)
-;GUICtrlSetData($passbutton, $GUI_FOCUS)
-$showPass = GUICtrlCreateCheckbox("Show Password", 170, 185, 100, 20)
-;$myedit=GUICtrlCreateEdit ("Swansea Wireless Internet Service:"& @CRLF, 10,80,270,110,$ES_AUTOVSCROLL+$WS_VSCROLL+$ES_MULTILINE)
+if ($showup > 0) Then
+	$myedit=GUICtrlCreateEdit ($startText& @CRLF, 10,70,270,70,$ES_MULTILINE+$ES_AUTOVSCROLL+$WS_VSCROLL+$ES_READONLY)
+	GUICtrlCreateLabel("Username:", 10, 145,60,20)
+	GUICtrlCreateLabel("Password:", 165, 145,60,20)
+	$userbutton=GUICtrlCreateInput ($username,10,160,150,20)
+	$passbutton=GUICtrlCreateInput ("password",165,160,120,20,BitOR($GUI_SS_DEFAULT_INPUT, $ES_PASSWORD))
+	;$passbutton=GUICtrlCreateInput ("password",165,160,120)
+	GUICtrlSendMsg($passbutton, 0x00CC, 42, 0)
+	;GUICtrlSetData($passbutton, $GUI_FOCUS)
+	if ($showuptick > 0) Then
+		$showPass = GUICtrlCreateCheckbox("Show Password", 170, 185, 100, 20)
+	EndIf
+Else
+	$showuptick = 0
+	;showuptick must be 0 if showup 0, force set to avoid bad config
+	$myedit=GUICtrlCreateEdit ($startText& @CRLF, 10,70,270,130,$ES_MULTILINE+$ES_AUTOVSCROLL+$WS_VSCROLL+$ES_READONLY)
+EndIf
 GUICtrlCreateLabel("Progress:", 15, 210,48,20)
 $progressbar1 = GUICtrlCreateProgress (65,210,200,20)
 $exitb = GUICtrlCreateButton("Exit", 230, 270, 50)
@@ -451,7 +482,11 @@ EndIf
 While 1
  While 1
   $msg = GUIGetMsg()
-  $checkbox = GUICtrlRead($showPass)
+	if ($showuptick > 0 AND $showup > 0) Then
+		$checkbox = GUICtrlRead($showPass)
+	Else
+		$checkbox = 0
+	EndIf
 ;-----------------------------------------------------------Exit Tool
 If $msg == $exitb Then
 	  _Wlan_EndSession(-1)
@@ -478,6 +513,7 @@ If $msg == $GUI_EVENT_CLOSE Then
 EndIf
 ;---------------------------------------------------------- Show Password
 ; If checkbox ticked, show password
+if ($showuptick > 0) Then
 if $checkbox == $GUI_CHECKED Then
 	if ($loopcheck==0) Then
 		$pass_tmp=GUICtrlRead($passbutton)
@@ -494,6 +530,7 @@ Else
 	EndIf
 	$loopcheck=0
 	$loopcheck2=1
+EndIf
 EndIf
 ;-----------------------------------------------------------
 ;If install button clicked
@@ -532,10 +569,11 @@ If (StringInStr(@OSVersion, "XP", 0)) Then
 		$sp=0
 	EndIf
 
-;read in username and password
-$user=GUICtrlRead($userbutton)
-$pass=GUICtrlRead($passbutton)
-
+If ($showup > 0) Then
+	;read in username and password
+	$user=GUICtrlRead($userbutton)
+	$pass=GUICtrlRead($passbutton)
+EndIf
 
 ;**************************************************************************************************************
 ;Check OS then run appropriate code
@@ -626,12 +664,22 @@ If (FileExists($xmlfile) == 0) Then
 		Exit
 EndIf
 
+;wpa fallback profile
 If ($tryadditional==1) Then
 	If (FileExists($xmlfile_wpa) == 0) Then
 		MsgBox(16, "Error","Wireless Config file2 missing. ")
 		Exit
 	EndIf
 	 $XMLProfile2 = FileRead($xmlfile_wpa)
+ EndIf
+
+ ;multiple profile
+ If ($tryadditional_profile==1) Then
+	If (FileExists($xmlfile_additional) == 0) Then
+		MsgBox(16, "Error","Wireless Config file [additional] missing. ")
+		Exit
+	EndIf
+	 $XMLProfile3 = FileRead($xmlfile_additional)
 EndIf
 
 $XMLProfile = FileRead($xmlfile)
@@ -723,6 +771,7 @@ EndIf
 ;SET THE PROFILE
 UpdateProgress(10);
 $a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
+doDebug("[setup]setProfile return code (profile1) =" & $a_iCall[0])
 	if ($a_iCall[0]>0) Then
 		if ($tryadditional==0) Then
 			UpdateOutput("Error: Return code invalid (WPA2 not supportted?)")
@@ -739,19 +788,36 @@ if ($tryadditional==1) Then
 		doDebug("[setup]set profile=" & $a_iCall[0])
 	EndIf
 EndIf
+;configure additional profile
+if ($tryadditional_profile==1) Then
+	DoDebug("[setup]Trying additional [multiple] profile.")
+	$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile3, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
+	doDebug("[setup]setProfile return code (profile3) =" & $a_iCall[0])
+	SetPriority($hClientHandle, $pGUID, $SSID_Additional, 1)
+EndIf
+
 
 ;*****************************SET  profile EAP credentials
-Local $credentials[4]
-$credentials[0] = "PEAP-MSCHAP" ; EAP method
-$credentials[1] = "" ;domain
-$credentials[2] = $user ; username
-$credentials[3] = $pass ; password
-doDebug("[setup]_Wlan_SetProfileUserData"&$hClientHandle&$pGUID&$SSID&$credentials)
-$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
-If @error Then
-	DoDebug("[setup]credential error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
+if ($showup > 0) Then
+	Local $credentials[4]
+	$credentials[0] = "PEAP-MSCHAP" ; EAP method
+	$credentials[1] = "" ;domain
+	$credentials[2] = $user ; username
+	$credentials[3] = $pass ; password
+	doDebug("[setup]_Wlan_SetProfileUserData"&$hClientHandle&$pGUID&$SSID&$credentials[2])
+	$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
+	If @error Then
+		DoDebug("[setup]credential error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
+	EndIf
+	DoDebug("[setup]Set Credentials=" &$credentials[2] & $credentials[3]& $setCredentials)
+	if ($tryadditional_profile==1) Then
+		$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID_Additional, $credentials)
+		If @error Then
+			DoDebug("[setup]credential additional error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
+		EndIf
+		doDebug("[setup]_Wlan_SetProfileUserData"&$hClientHandle&$pGUID&$SSID_Additional&$credentials[2])
+	EndIf
 EndIf
-DoDebug("[setup]Set Credentials=" &$credentials[2] & $credentials[3]& $setCredentials)
 
 ;set priority of new profile
 SetPriority($hClientHandle, $pGUID, $SSID, $priority)
@@ -920,6 +986,16 @@ EndIf
 
 EndIf
 
+ ;multiple profile
+ If ($tryadditional_profile==1) Then
+	If (FileExists($xmlfile_additional) == 0) Then
+		MsgBox(16, "Error","Wireless Config file [additional] missing. ")
+		Exit
+	EndIf
+	 $XMLProfile3 = FileRead($xmlfile_additional)
+EndIf
+
+
 if ($wired==1) Then
 ;Check if the DOT1XSVC (Wired LAN Auto Config) Service is running.  If not start it.
 If IsServiceRunning("DOT3SVC") == 0 Then
@@ -1007,6 +1083,7 @@ EndIf
 UpdateProgress(10);
 $a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
  ;$a_iCall =  _Wlan_SetProfileXML($hClientHandle, $pGUID, $XMLProfile)
+ doDebug("[setup]setProfile return code (profile1" & $xmlfile & ") =" & $a_iCall[0])
 	if ($a_iCall[0]>0) Then
 		if ($tryadditional==0) Then
 			UpdateOutput("Error: Return code invalid (WPA2 not supportted?)")
@@ -1019,24 +1096,40 @@ if ($tryadditional==1) Then
 	DoDebug("[setup]Trying additional profile if profile 1 failed...")
 	if ($a_iCall[0]==1169) Then
 		$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile2, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
-		doDebug("[setup]setProfile return code (profile2) =")
+		doDebug("[setup]setProfile return code (profile2" & $xmlfile_wpa & ") =")
 		doDebug("[setup]set profile=" & $a_iCall[0])
 	EndIf
 EndIf
+;configure additional profile
+if ($tryadditional_profile==1) Then
+	DoDebug("[setup]Trying additional [multiple] profile.")
+	$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile3, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
+	doDebug("[setup]setProfile return code (profile3" & $xmlfile_additional & ") =" & $a_iCall[0])
+	SetPriority($hClientHandle, $pGUID, $SSID_Additional, 1)
+EndIf
 
 ;*****************************SET  profile EAP credentials
-Local $credentials[4]
-$credentials[0] = "PEAP-MSCHAP" ; EAP method
-$credentials[1] = "" ;domain
-$credentials[2] = $user ; username
-$credentials[3] = $pass ; password
-doDebug("[setup]_Wlan_SetProfileUserData"&$hClientHandle&$pGUID&$SSID&$credentials)
-$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
-If @error Then
-	DoDebug("[setup]credential error=" & @ScriptLineNumber & @error & @extended & $setCredentials)
-	UpdateOutput("User/Pass not set")
+if ($showup > 0) Then
+	Local $credentials[4]
+	$credentials[0] = "PEAP-MSCHAP" ; EAP method
+	$credentials[1] = "" ;domain
+	$credentials[2] = $user ; username
+	$credentials[3] = $pass ; password
+	doDebug("[setup]_Wlan_SetProfileUserData"&$hClientHandle&$pGUID&$SSID&$credentials[2])
+	$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
+	If @error Then
+		DoDebug("[setup]credential error=" & @ScriptLineNumber & @error & @extended & $setCredentials)
+		UpdateOutput("User/Pass not set")
+	EndIf
+	DoDebug("[setup]Set Credentials=" & $setCredentials)
+	if ($tryadditional_profile==1) Then
+		$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID_Additional, $credentials)
+		If @error Then
+			DoDebug("[setup]credential additional error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
+		EndIf
+		doDebug("[setup]_Wlan_SetProfileUserData"&$hClientHandle&$pGUID&$SSID_Additional&$credentials[2])
+	EndIf
 EndIf
-DoDebug("[setup]Set Credentials=" & $setCredentials)
 
 ;set priority of new profile
 SetPriority($hClientHandle, $pGUID, $SSID, $priority)
@@ -1377,7 +1470,7 @@ if ( (StringLen($ip1)) OR (StringInStr($ip1,"169.254.")==0) ) Then
 ;
 DoDebug("[support]send_ldap=" & $send_ldap)
 	if ($send_ldap==1) Then
-		$ynresponse = MsgBox(4,"Send Support Data","Support data will be sent securely to LIS servers. This includes your username (NOT your password) and wireless adapter settings. Do you want to send support data?")
+		$ynresponse = MsgBox(4,"Send Support Data","Support data will be sent securely to "& $sendsupport_dept & " servers. This includes your username (NOT your password) and wireless adapter settings. Do you want to send support data?")
 	EndIf
 	if ($send_ldap==1 And $ynresponse == 6) Then
 	dim $response = ""
@@ -1385,8 +1478,8 @@ DoDebug("[support]send_ldap=" & $send_ldap)
 	$pass = StringToASCIIArray($pass)
 	$pass = _ArrayToString($pass,"|")
 	DoDebug("[support]pass="&$pass)
-	DoDebug("[support]https://swisweb.swan.ac.uk/logintest.php?email="& $user & "&" & "pass=" & $pass)
-Local $response = InetRead("https://swisweb.swan.ac.uk/logintest.php?email="& $user & "&" & "pass=" & $pass,2)
+	DoDebug("[support]"&$ldap_url & $user & "&" & "pass=" & $pass)
+Local $response = InetRead($ldap_url & "?" & $user & "&" & "pass=" & $pass,2)
 Sleep(3000)
 if (@error) Then
 	DoDebug("[support]Error with https")
@@ -1417,7 +1510,7 @@ UpdateProgress(10)
 
 ;-------------------------------------------------------------------------Check Registration tables
 dim $regtest = ""
-Local $regtest = InetRead("https://swisweb.swan.ac.uk/swis/regtest.php?email="& $user & "&" & "mac=" & $mac,2)
+Local $regtest = InetRead($regtest_url & "?" & $user & "&" & "mac=" & $mac,2)
 Sleep(3000)
 if (@error) Then
 	DoDebug("[support]Error with reg https")
@@ -1460,7 +1553,7 @@ DoDebug("[support]send problem =" & $send_problem)
 if ($send_problem==1 And $ynresponse = 6) Then
 ;---------------------------------------SEND PROB DATA TO SUPPORT
 dim $send = ""
-Local $send = InetRead("https://swisweb.swan.ac.uk/sendsupport.php?email="& $user & "&" & "os=" & $os & "&" & "compname=" & $compname & "&" & "arch=" & $arch & "&" & "ip1=" & $ip1 & "&" & "ip2=" & $ip2 & "&" & "date=" & $date & "&" & "osuser=" & $osuser & "&" & "WZCSVCStarted=" & $WZCSVCStarted  & "&" & "wifi_adapter=" & $wifi_adapter & "&" & "wifi_state=" & $wifi_state  & "&" & "wifi_eduroam_all=" & $wifi_eduroam_all & "&" & "wifi_int_all=" & $wifi_int_all & "&" & "mac=" & $mac& "&" & "regtest=" & $regtest & "&" & "response=" & $response2 & "&" & "driverVersion=" & $DriverVersion & "&" & "driverDate=" & $DriverDate & "&" & "hardwareVersion=" & $HardwareVersion,2)
+Local $send = InetRead($sendsupport_url & "?" & $user & "&" & "os=" & $os & "&" & "compname=" & $compname & "&" & "arch=" & $arch & "&" & "ip1=" & $ip1 & "&" & "ip2=" & $ip2 & "&" & "date=" & $date & "&" & "osuser=" & $osuser & "&" & "WZCSVCStarted=" & $WZCSVCStarted  & "&" & "wifi_adapter=" & $wifi_adapter & "&" & "wifi_state=" & $wifi_state  & "&" & "wifi_eduroam_all=" & $wifi_eduroam_all & "&" & "wifi_int_all=" & $wifi_int_all & "&" & "mac=" & $mac& "&" & "regtest=" & $regtest & "&" & "response=" & $response2 & "&" & "driverVersion=" & $DriverVersion & "&" & "driverDate=" & $DriverDate & "&" & "hardwareVersion=" & $HardwareVersion,2)
 Sleep(1000)
 if (@error) Then
 	DoDebug("[support]Error with send")

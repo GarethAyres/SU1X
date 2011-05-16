@@ -1,23 +1,38 @@
 SU1X Readme file by Gareth Ayres.
 
-Works with: XP SP2, SP3, VISTA (All SPs). Will hopefully work with 7 soon.
+Works with: XP SP3, VISTA (All SPs) and 7.
+
+Features now include:
+-Wired 802.1x capture and install
+-More debugging
+-Automation of configuration of a PEAP wireless connection on XP(SP3),Vita and Win 7
+-Can set EAP credentials without additional user interaction (avoids tooltip bubble)
+-Installation of a certificate (silent)
+-Checks for WPA2 compatibility and falls back to a WPA profile
+-Third party supplicant check
+-SSID removal and priority setting
+-Support tab: (checks: adapter, wzc service, profile presence, IP)
+-Outputs check results to user with tooltip and/or to file
+-Printer tab to add/remove networked printer
+-Multiple profile installs
+
 
 There are two exe's that make up this package:
 
 1. su1x-setup.exe
-This exe sets up Windows XP and Vista clients for use on a wireless network as defined in the XML file.
+This exe sets up Windows XP, Vista and Win7 clients for use on a wireless network as defined in the XML file.
 The config.ini file defines the location of the XML files.
+Read the config.ini and check the settings, its all self explanatory.
 
 2. getprofile.exe
 This file is needed to create the XML file containing the wireless configuration information.
 Manually set up a wireless computer for use on your wireless network, make sure the ssid value in the config.ini 
 is correct (eduroam by default) and then run the getprofile tool. This will then save a xml file with the 
 configuration information in it called Profile.xml. You will then need to make sure the xmlfile value in 
-config.ini points to this file. You can then place it in the bin folder and distribute it.
+config.ini points to this file. You can then place it in the bin folder and package and distribute it.
 
 
 ; Written by Gareth Ayres of Swansea University (g.j.ayres@swansea.ac.uk)
-; Based on script written by Jeff deVeer (http://www.autoitscript.com/forum/index.php?showtopic=56479&hl=_EnumWireless)
 ; 
 ;   Copyright 2009 Swansea University Licensed under the
 ;	Educational Community License, Version 2.0 (the "License"); you may
