@@ -1,0 +1,78 @@
+SUPPORT DATA HELP FILE
+
+It is possible to get the su1x tool to send data to a web server.
+The data will be sent using GET variables, and needs an appropriate script to read them then do somthign with them.
+
+PHP was used at SWANSEA.
+
+This file describes the variable names sent, so appropriate scripts can be written to manage support.
+
+ALL DATA is sent via HTTPS. A valid cert is needed for this to work.
+It may be wise to block requestes to these scripts from outside your wifi network ranges to stop potential abuse.
+
+In the config.ini the following must be set:
+show_support = 1
+send_ldap = 1
+send_problem = 1
+
+*****************************************
+**LDAP TEST SCRIPT
+*****************************************
+The URL sepcified in ldap_url is sent the following data:
+[LDAP_URL]?email=x&pass=y
+x = String for the GUI email box.
+Y = A string of ASCII values for the password with | delimiters. This encoding is done to avoid issues with special characters in GET varaibles/
+The response needed from the web server sript has to be one of:
+"Accepted"
+"Username not found on LDAP"
+"Ambigious result"
+"Password Incorrect"
+
+DO NOT include any HTML encoding or body tags etc, just one line response.
+
+
+*****************************************
+**REGISTRATION TEST SCRIPT
+*****************************************
+The URL specified in regtest_url is send the following data:
+[regtest_url]?email=x&mac=y
+x = String for the GUI email box.
+y = MAC Address taken for wifi interface.
+The response needed from the web server sript has to be one of:
+"Registration OK",
+"Device not in DHCP table"
+"Device Not Registered"
+"Database Failure (usergroup)"
+"Database Failure (ambigious username)"
+"Mac/User mismatch"
+
+DO NOT include any HTML encoding or body tags etc, just one line response.
+
+
+*****************************************
+**SEND SUPPORT TICKET TO EMAIL/DB SCRIPT
+*****************************************
+The URL sepcified in sendsupport_url is sent the following data:
+[sendsupport_url]?email=a&os=b&compname=c&arch=d&ip1=e&ip2=f&date=f&osuser=g&WZCSVCStarted=h&wifi_adapter=i&wifi_state=j&wifi_eduroam_all=k&wifi_int_all=l&mac=m&regtest=n&response=o&driverVersion=p&driverDate=q&hardwareVersion=r
+email=username from GUI username box
+os=Operating System
+compname=Computer Name
+arch=computer architecture 32/64
+ip1=ip of wifi interface
+ip2=ip of additional interface
+date= system data
+osuser=OS username
+WZCSVCStarted=1 for started
+wifi_adapter=adapter name
+wifi_state=wifi int state
+wifi_eduroam_all=eduroam profile settings
+wifi_int_all=wifi int state
+mac = MAC Address
+regtest=regtest response
+response=ldap test response
+driverVersion=wifi driver version
+driverDate=wifi driver data
+hardwareVersion=wifi hardware firmaware data
+
+There is no response from this script. 
+All this data is only sent if the user agrees to it when prompted by a message box.
