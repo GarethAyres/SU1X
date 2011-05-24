@@ -3,19 +3,42 @@ At the moment you will need to add the XML manifest below to the exe manually, a
 There is a mt.exe with the Windows SDK to allow this, but it failes with some autoit code.
 So i used ResHacker to add it. Not great, but it works and stops the PAC issues.
 
-
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
-    <security>
-      <requestedPrivileges>
-        <requestedExecutionLevel level="requireAdministrator" uiAccess="false"></requestedExecutionLevel>
-      </requestedPrivileges>
-    </security>
-  </trustInfo>
-  <dependency>
-    <dependentAssembly>
-      <assemblyIdentity type="win32" name="Swansea.University.su1x" version="1.0.6.0" language="*" processorArchitecture="*" publicKeyToken="6595b64144ccf1df"></assemblyIdentity>
-<description>SU1X Wireless Config</description> 
-    </dependentAssembly>
-  </dependency>
+
+	<!-- Identify the application security requirements. -->
+	<trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+		<security>
+			<requestedPrivileges>
+				<requestedExecutionLevel
+ 					level="requireAdministrator"
+					uiAccess="false"
+				/>
+			</requestedPrivileges>
+		</security>
+	</trustInfo>
+
+<compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+<application>
+<supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>
+<supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>
+</application>
+</compatibility>
+
+	<!-- Identify the application dependencies. -->
+	<dependency>
+		<dependentAssembly>
+			<assemblyIdentity
+				type="win32"
+				name="Microsoft.Windows.Common-Controls"
+				version="6.0.0.0"
+				language="*"
+				processorArchitecture="*"
+				publicKeyToken="6595b64144ccf1df"
+			/>
+		</dependentAssembly>
+	</dependency>
 </assembly>
+
+
+http://community.flexerasoftware.com/archive/index.php?t-189007.html

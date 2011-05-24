@@ -53,7 +53,7 @@ DO NOT include any HTML encoding or body tags etc, just one line response.
 **SEND SUPPORT TICKET TO EMAIL/DB SCRIPT
 *****************************************
 The URL sepcified in sendsupport_url is sent the following data:
-[sendsupport_url]?email=a&os=b&compname=c&arch=d&ip1=e&ip2=f&date=f&osuser=g&WZCSVCStarted=h&wifi_adapter=i&wifi_state=j&wifi_eduroam_all=k&wifi_int_all=l&mac=m&regtest=n&response=o&driverVersion=p&driverDate=q&hardwareVersion=r
+[sendsupport_url]?email=a&os=b&compname=c&arch=d&ip1=e&ip2=f&date=f&osuser=g&WZCSVCStarted=h&wifi_adapter=i&wifi_state=j&wifi_eduroam_all=k&wifi_int_all=l&mac=m&regtest=n&response=o&driverVersion=p&driverDate=q&hardwareVersion=r&problemDesc=s
 email=username from GUI username box
 os=Operating System
 compname=Computer Name
@@ -73,6 +73,7 @@ response=ldap test response
 driverVersion=wifi driver version
 driverDate=wifi driver data
 hardwareVersion=wifi hardware firmaware data
+problemDesc=the text entered by the user from the gethelp button
 
 There is no response from this script. 
 All this data is only sent if the user agrees to it when prompted by a message box.

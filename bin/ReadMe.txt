@@ -3,6 +3,10 @@ SU1X Readme file by Gareth Ayres.
 Works with: XP SP3, VISTA (All SPs) and 7.
 
 Features now include:
+-Intercept wireless reauths, reloading tool
+-Support features including web API for checks and problem reporting
+-Fallback SSID contorl for use with web checks
+-Fixed bug with PCA compatabillity warning in win7. see src/manifest.txt
 -Wired 802.1x capture and install
 -More debugging
 -Automation of configuration of a PEAP wireless connection on XP(SP3),Vita and Win 7
