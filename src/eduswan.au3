@@ -1,17 +1,18 @@
-#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_Icon=SETUP07.ICO
-#AutoIt3Wrapper_Outfile=su1x-setup.exe
+#region ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_icon=SETUP07.ICO
+#AutoIt3Wrapper_outfile=su1x-setup.exe
 #AutoIt3Wrapper_Compression=0
 #AutoIt3Wrapper_UseUpx=n
-#AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Fileversion=1.9.1.0
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
-#AutoIt3Wrapper_res_requestedExecutionLevel=requireAdministrator
+#AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
+#AutoIt3Wrapper_AU3Check_Stop_OnWarning=y
 #AutoIt3Wrapper_Run_Tidy=y
-#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+#endregion ;**** Directives created by AutoIt3Wrapper_GUI ****
+
 ;-------------------------------------------------------------------------
 ; AutoIt script to automate the creation of Wireless / Wired Configuration for Eduroam
 ;
@@ -39,6 +40,9 @@
 ; To save time, makes use of wirelss API interface by MattyD (http://www.autoitscript.com/forum/index.php?showtopic=91018&st=0)
 ;
 ; ****** Change log
+;
+; **31/05/2011
+;	Changed cert install command to work with p7b files on request of david sullivan of barnet.ac.uk
 ;
 ; **24/05/2011
 ;	Added fallback ssid support
@@ -449,7 +453,7 @@ Func doGetHelpInfo()
 	GUICreate("Help Information", 400, 250, @DesktopHeight / 2 - 100, @DesktopHeight / 2 - 100)
 	GUISetState(@SW_SHOW)
 	GUICtrlCreateLabel("Please enter a description of the problem:", 5, 5)
-	$probdesc = GUICtrlCreateEdit("Problem Description:" & @CRLF, 10, 20, 385, 200, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL)
+	$probdesc = GUICtrlCreateEdit("Problem Description:" & @CRLF, 10, 20, 385, 200, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_WANTRETURN)
 	$finish = GUICtrlCreateButton("Send", 150, 220, 100, 25)
 	While 1
 		$msg2 = GUIGetMsg()
@@ -503,11 +507,20 @@ Func CloseWindows()
 EndFunc   ;==>CloseWindows
 
 Func CloseConnectWindows()
+	$winexist = False
 	If WinExists("Connect to a Network") Then
 		;WinWaitClose("Network Connections","",15)
 		WinKill("Connect to a Network")
 		DoDebug("Closed Connect to a Network")
+		$winexist = True
 	EndIf
+	If WinExists("Windows Security") Then
+		;WinWaitClose("Network Connections","",15)
+		WinKill("Windows Security")
+		DoDebug("Closed Windows Security")
+		$winexist = True
+	EndIf
+	Return $winexist
 EndFunc   ;==>CloseConnectWindows
 
 Func RemoveSSID($hClientHandle, $pGUID, $ssidremove)
@@ -623,6 +636,9 @@ Func setScheduleTask()
 EndFunc   ;==>setScheduleTask
 
 Func alreadyRunning()
+	;kill windows sup gui first
+	$quick = CloseConnectWindows()
+
 	$list = ProcessList(@ScriptName)
 	;_ArrayDisplay($list, "2D array")
 	If ($list[0][0] > 1) Then
@@ -643,6 +659,13 @@ Func alreadyRunning()
 		EndIf
 		$pGUID = $Enum[0][0]
 		DoDebug("[reauth-start]Got wifi card:" & $Enum[0][1])
+		if ($quick) Then
+			$loopmax = 0
+			$loop_count = 1
+		Else
+			$loopmax = 4
+		EndIf
+
 		While 1
 			;check if connected and got an ip
 			$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
@@ -663,8 +686,8 @@ Func alreadyRunning()
 					DoDebug("[reauth-start]Authenticating...")
 				EndIf
 			EndIf
-			Sleep(2000)
-			if ($loop_count > 4) Then ExitLoop
+			if ($quick == False) Then Sleep(2000)
+			if ($loop_count > $loopmax) Then ExitLoop
 			$loop_count = $loop_count + 1
 		WEnd
 
@@ -1014,7 +1037,8 @@ While 1
 				;Certificate install
 				If ($use_cert == 1) Then
 					DoDebug("[setup]Cert Install = " & $certificate)
-					$result = Run(@ScriptDir & "\CertMgr.Exe /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
+					$result = Run(@ScriptDir & "\CertMgr.Exe /all /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
+					;$result = Run(@ScriptDir & "\CertMgr.Exe /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
 					DoDebug("[setup]result of cert=" & $result)
 					UpdateOutput("Installed certificate")
 				EndIf
@@ -1367,7 +1391,8 @@ While 1
 				;Certificate install
 				If ($use_cert == 1) Then
 					DoDebug("[setup]Cert Install")
-					$result = Run(@ScriptDir & "\CertMgr.Exe /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
+					$result = Run(@ScriptDir & "\CertMgr.Exe /all /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
+					;$result = Run(@ScriptDir & "\CertMgr.Exe /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
 					DoDebug("[setup]result of cert=" & $result)
 					UpdateOutput("Installed certificate")
 				EndIf
@@ -1375,6 +1400,12 @@ While 1
 				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
 				if ($wireless == 1) Then
 					if ($run_already < 1) Then
+						$hClientHandle = _Wlan_OpenHandle()
+						$Enum = _Wlan_EnumInterfaces($hClientHandle)
+					EndIf
+
+					if ($run_already > 0) Then
+						_Wlan_CloseHandle()
 						$hClientHandle = _Wlan_OpenHandle()
 						$Enum = _Wlan_EnumInterfaces($hClientHandle)
 					EndIf
@@ -1463,7 +1494,7 @@ While 1
 							DoDebug("[setup]credential error=" & @ScriptLineNumber & @error & @extended & $setCredentials)
 							UpdateOutput("User/Pass not set")
 						EndIf
-						DoDebug("[setup]Set Credentials=" & $setCredentials)
+						DoDebug("[reauth]Set Credentials=" & $credentials[2] & $credentials[3] & $setCredentials)
 						if ($tryadditional_profile == 1) Then
 							$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID_Additional, $credentials)
 							If @error Then
