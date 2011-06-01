@@ -1181,30 +1181,36 @@ While 1
 						;check if connected and got an ip
 						UpdateProgress(5)
 						$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
-						if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
-							$ip1 = @IPAddress1
-							if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
-								UpdateOutput("Getting an IP Address...")
-							Else
-								DoDebug("[setup]Connected")
-								UpdateOutput($SSID & " connected with ip=" & $ip1)
-								TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
-								Sleep(2000)
-								ExitLoop
-								Exit
+						if (IsArray($retry_state)) Then
+							if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
+								$ip1 = @IPAddress1
+								if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
+									UpdateOutput("Getting an IP Address...")
+								Else
+									DoDebug("[setup]Connected")
+									UpdateOutput($SSID & " connected with ip=" & $ip1)
+									TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
+									Sleep(2000)
+									ExitLoop
+									Exit
+								EndIf
 							EndIf
-						EndIf
 
-						if (StringCompare("Disconnected", $retry_state[0], 0) == 0) Then
-							DoDebug("[setup]Disconnected")
-							UpdateOutput($SSID & " disconnected")
-						EndIf
 
-						if (StringCompare("Authenticating", $retry_state[0], 0) == 0) Then
-							DoDebug("[setup]Authenticating...")
-							UpdateOutput($SSID & " authenticating...")
-						EndIf
 
+							if (StringCompare("Disconnected", $retry_state[0], 0) == 0) Then
+								DoDebug("[setup]Disconnected")
+								UpdateOutput($SSID & " disconnected")
+							EndIf
+
+							if (StringCompare("Authenticating", $retry_state[0], 0) == 0) Then
+								DoDebug("[setup]Authenticating...")
+								UpdateOutput($SSID & " authenticating...")
+							EndIf
+						Else
+							DoDebug("[setup]Connected")
+							UpdateOutput($SSID & "Failed... retrying... ")
+						EndIf
 						Sleep(2000)
 						if ($loop_count > 7) Then ExitLoop
 						$loop_count = $loop_count + 1
@@ -1535,29 +1541,34 @@ While 1
 					While 1
 						;check if connected and got an ip
 						UpdateProgress(5)
-						$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
-						if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
-							$ip1 = @IPAddress1
-							if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
-								UpdateOutput("Getting an IP Address...")
-							Else
-								DoDebug("[setup]Connected")
-								UpdateOutput($SSID & " connected with ip=" & $ip1)
-								TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
-								Sleep(2000)
-								ExitLoop
-								Exit
+						if (IsArray($retry_state)) Then
+							$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
+							if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
+								$ip1 = @IPAddress1
+								if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
+									UpdateOutput("Getting an IP Address...")
+								Else
+									DoDebug("[setup]Connected")
+									UpdateOutput($SSID & " connected with ip=" & $ip1)
+									TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
+									Sleep(2000)
+									ExitLoop
+									Exit
+								EndIf
 							EndIf
-						EndIf
 
-						if (StringCompare("Disconnected", $retry_state[0], 0) == 0) Then
-							DoDebug("[setup]Disconnected")
-							UpdateOutput($SSID & " disconnected")
-						EndIf
+							if (StringCompare("Disconnected", $retry_state[0], 0) == 0) Then
+								DoDebug("[setup]Disconnected")
+								UpdateOutput($SSID & " disconnected")
+							EndIf
 
-						if (StringCompare("Authenticating", $retry_state[0], 0) == 0) Then
-							DoDebug("[setup]Authenticating...")
-							UpdateOutput($SSID & " authenticating...")
+							if (StringCompare("Authenticating", $retry_state[0], 0) == 0) Then
+								DoDebug("[setup]Authenticating...")
+								UpdateOutput($SSID & " authenticating...")
+							EndIf
+						Else
+							DoDebug("[setup]failed... retrying...")
+							UpdateOutput($SSID & " failed... retrying...")
 						EndIf
 
 						Sleep(2000)
@@ -1565,13 +1576,15 @@ While 1
 						$loop_count = $loop_count + 1
 					WEnd
 
-					if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
-						if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
-							UpdateOutput("Connected but not yet got an IP Address...")
+					if (IsArray($retry_state)) Then
+						if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
+							if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
+								UpdateOutput("Connected but not yet got an IP Address...")
+							EndIf
+						Else
+							UpdateOutput("ERROR:Failed to connected")
+							$probconnect = 1
 						EndIf
-					Else
-						UpdateOutput("ERROR:Failed to connected")
-						$probconnect = 1
 					EndIf
 					;code to connect to SSID instead of waiting for user.
 					;
@@ -2405,28 +2418,33 @@ While 1
 					;check if connected and got an ip
 					UpdateProgress(5)
 					$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
-					if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
-						$ip1 = @IPAddress1
-						if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
-							UpdateOutput("Getting an IP Address...")
-						Else
-							DoDebug("[reauth]Connected")
-							UpdateOutput($SSID & " connected with ip=" & $ip1)
-							TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
-							Sleep(2000)
-							ExitLoop
-							Exit
+					if (IsArray($retry_state)) Then
+						if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
+							$ip1 = @IPAddress1
+							if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
+								UpdateOutput("Getting an IP Address...")
+							Else
+								DoDebug("[reauth]Connected")
+								UpdateOutput($SSID & " connected with ip=" & $ip1)
+								TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
+								Sleep(2000)
+								ExitLoop
+								Exit
+							EndIf
 						EndIf
-					EndIf
 
-					if (StringCompare("Disconnected", $retry_state[0], 0) == 0) Then
-						DoDebug("[reauth]Disconnected")
-						UpdateOutput($SSID & " disconnected")
-					EndIf
+						if (StringCompare("Disconnected", $retry_state[0], 0) == 0) Then
+							DoDebug("[reauth]Disconnected")
+							UpdateOutput($SSID & " disconnected")
+						EndIf
 
-					if (StringCompare("Authenticating", $retry_state[0], 0) == 0) Then
-						DoDebug("[reauth]Authenticating...")
-						UpdateOutput($SSID & " authenticating...")
+						if (StringCompare("Authenticating", $retry_state[0], 0) == 0) Then
+							DoDebug("[reauth]Authenticating...")
+							UpdateOutput($SSID & " authenticating...")
+						EndIf
+					Else
+						DoDebug("[reauth]failed...")
+						UpdateOutput($SSID & " failed...")
 					EndIf
 
 					Sleep(2000)
@@ -2434,12 +2452,14 @@ While 1
 					$loop_count = $loop_count + 1
 				WEnd
 
-				if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
-					if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
-						UpdateOutput("Connected but not yet got an IP Address...")
+				if (IsArray($retry_state)) Then
+					if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
+						if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
+							UpdateOutput("Connected but not yet got an IP Address...")
+						EndIf
+					Else
+						UpdateOutput("ERROR:Failed to connected")
 					EndIf
-				Else
-					UpdateOutput("ERROR:Failed to connected")
 				EndIf
 
 				UpdateProgress(100)
