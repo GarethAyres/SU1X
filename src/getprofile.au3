@@ -3,7 +3,6 @@
 #AutoIt3Wrapper_outfile=getprofile.exe
 #AutoIt3Wrapper_Compression=0
 #AutoIt3Wrapper_UseUpx=n
-#AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 ;-------------------------------------------------------------------------
@@ -201,16 +200,32 @@ $hClientHandle = _Wlan_OpenHandle()
 if @error Then
 		doDebug("No Wireless Interface Found. Exiting... Error Code = " & @error)
 		Exit
-EndIf
+	EndIf
 $Enum = _Wlan_EnumInterfaces($hClientHandle)
 if @error Then doDebug("No Interface Found")
-$pGUID = $Enum[0][0]
-if @error Then doDebug("No Interface Found")
+
+						If (UBound($Enum) == 0) Then
+						DoDebug("[setup]Enumeration of wlan adapter" & @error)
+						MsgBox(16, "Error", "No Wireless Adapter Found.")
+						Exit
+					EndIf
+					$pGUID = $Enum[0][0]
+					DoDebug("Adapter=" & $Enum[0][1])
+					$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
+						If (UBound($profiles) == 0) Then
+							DoDebug("[setup]No wireless profiles found")
+							exit;
+						Else
+							DoDebug("found " & UBound($profiles) & "profiles")
+						EndIf
+
 UpdateProgress(10);
 $profile=_Wlan_GetProfileXML($hClientHandle, $pGUID, $SSID)
 ;$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanGetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID,"ptr", 0, "wstr*", 0, "ptr*", 0, "ptr*", 0)
 if (@error) Then
 	doDebug("No "&$SSID&" profile exists! Exiting...")
+	doDebug("Adapter= " &  $Enum[0][1])
+	doDebug("wlan_getProfileXML result = " &  $profile)
 	MsgBox(1,"Error","No "&$SSID&" profile exists! Exiting...")
 	Exit
 EndIf
