@@ -4,12 +4,12 @@
 
 ; -------------------------------
 ; Start
-  !define MUI_PRODUCT "SU1X"
+  !define MUI_PRODUCT "Eduroam Setup Tool"
   !define MUI_FILE "su1x-setup"
   !define MUI_VERSION ""
-  !define MUI_BRANDINGTEXT "SIG Beta Ver. 1.0"
+  !define MUI_BRANDINGTEXT "Eduroam @ Swansea"
   !define MUI_HEADERIMAGE
-  !define MUI_HEADERIMAGE_BITMAP "${NSISDIR}\images\jrs-header.jpg" ; optional
+  !define MUI_HEADERIMAGE_BITMAP "images\jrs-header.jpg"
   CRCCheck On
 
 ;--------------------------------
@@ -18,14 +18,14 @@
 
 ;--------------------------------
 ;General
-  Name "SU1X"
+  Name "Eduroam @ Swansea"
   OutFile "su1x-installer.exe"
   ShowInstDetails "nevershow"
   ShowUninstDetails "nevershow"
   !define MUI_ICON "swansea.ico"
   !define MUI_UNICON "swansea.ico"
   ;Request application privileges for Windows Vista
-  RequestExecutionLevel user
+  RequestExecutionLevel admin
 
 ;--------------------------------
 ;Folder selection page
@@ -36,7 +36,7 @@
 ;Pages
 ;install
   !insertmacro MUI_PAGE_WELCOME
-  !insertmacro MUI_PAGE_LICENSE "${NSISDIR}\license.txt"
+  !insertmacro MUI_PAGE_LICENSE "license.txt"
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
@@ -51,24 +51,9 @@
   !insertmacro MUI_LANGUAGE "English"
 
 
-Section "SU1X custom" su1xFunc
-
-  ;Store installation folder
-  ;WriteRegStr HKCU "Software\Modern UI Test" "" $INSTDIR
-
-SectionEnd
-
-  LangString DESC_su1x ${LANG_ENGLISH} "Welcome..."
-
-  ;Assign language strings to sections
-  !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${su1xFunc} $(DESC_su1x)
-  !insertmacro MUI_FUNCTION_DESCRIPTION_END
-
-
 ;--------------------------------
 ;Installer Sections
-Section "install" Installation info
+Section "Eduroam @ Swansea" install
 
 ;Add files
   SetOutPath "$INSTDIR"
@@ -76,11 +61,25 @@ Section "install" Installation info
   File "${MUI_FILE}.exe"
   File "config.ini"
   File "license.txt"
+  File "ReadMe.txt"
+  File "Wired_Profile.xml"
+  File "Profile.xml"
+  File "CertMgr.Exe"
+  File "su1x-auth-task.xml"
+  File "su1x-setup.exe"
+  File "swansea.ico"
+  File "wireless.xml"
+  File "wireless-wpa2.xml"
   SetOutPath "$INSTDIR\images"
-  file "images\lis-header.jpg"
+  File "images\lis-header.jpg"
+  File "images\bubble-connected-xp.jpg"
+  File "images\connected-7.jpg"
+  File "images\connected-vista.jpg"
+  File "images\jrs-header.jpg"
+
 
 ;create desktop shortcut
-  CreateShortCut "$DESKTOP\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" ""
+  CreateShortCut "$DESKTOP\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" "$INSTDIR\${MUI_ICON}" ""
 
 ;create start-menu items
   CreateDirectory "$SMPROGRAMS\${MUI_PRODUCT}"
@@ -124,7 +123,9 @@ SectionEnd
 
 ;Function that calls a messagebox when installation finished correctly
 Function .onInstSuccess
-  MessageBox MB_OK "You have successfully installed ${MUI_PRODUCT}. Use the desktop icon to start the program."
+  MessageBox MB_OK "You have successfully installed ${MUI_PRODUCT}. Starting tool..."
+  Exec '"$INSTDIR\${MUI_FILE}.exe"'
+
 FunctionEnd
 
 
