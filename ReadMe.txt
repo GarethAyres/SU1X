@@ -1,9 +1,10 @@
 SU1X Readme file by Gareth Ayres.
+http://su1x.swan.ac.uk
 
 Works with: XP SP3, VISTA (All SPs) and 7.
 
 Features now include:
--Intercepts wireless reauths, reloading tool with new tab and connection checks
+-Intercept wireless reauths, reloading tool
 -Support features including web API for checks and problem reporting
 -Fallback SSID contorl for use with web checks
 -Fixed bug with PCA compatabillity warning in win7. see src/manifest.txt
@@ -33,6 +34,13 @@ Manually set up a wireless computer for use on your wireless network, make sure 
 is correct (eduroam by default) and then run the getprofile tool. This will then save a xml file with the 
 configuration information in it called Profile.xml. You will then need to make sure the xmlfile value in 
 config.ini points to this file. You can then place it in the bin folder and package and distribute it.
+
+***************************
+Deployment
+***************************
+The su1x-installer.nsi file can be modified and recompiled into a installer application using the NSIS software.
+NSIS - http://nsis.sourceforge.net
+
 
 
 ; Written by Gareth Ayres of Swansea University (g.j.ayres@swansea.ac.uk)
