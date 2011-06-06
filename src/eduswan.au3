@@ -1541,8 +1541,8 @@ While 1
 					While 1
 						;check if connected and got an ip
 						UpdateProgress(5)
+                        $retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
 						if (IsArray($retry_state)) Then
-							$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
 							if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
 								$ip1 = @IPAddress1
 								if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
