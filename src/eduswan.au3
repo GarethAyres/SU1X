@@ -1,6 +1,6 @@
-#region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_icon=SETUP07.ICO
-#AutoIt3Wrapper_outfile=su1x-setup.exe
+#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_Icon=SETUP07.ICO
+#AutoIt3Wrapper_Outfile=su1x-setup.exe
 #AutoIt3Wrapper_Compression=0
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
@@ -8,10 +8,10 @@
 #AutoIt3Wrapper_Res_Fileversion=1.9.1.0
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
-#AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
-#AutoIt3Wrapper_AU3Check_Stop_OnWarning=y
+#AutoIt3Wrapper_res_requestedExecutionLevel=requireAdministrator
+#AutoIt3Wrapper_Au3Check_Stop_OnWarning=y
 #AutoIt3Wrapper_Run_Tidy=y
-#endregion ;**** Directives created by AutoIt3Wrapper_GUI ****
+#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 
 ;-------------------------------------------------------------------------
 ; AutoIt script to automate the creation of Wireless / Wired Configuration for Eduroam
@@ -704,7 +704,131 @@ Func alreadyRunning()
 
 EndFunc   ;==>alreadyRunning
 
+;-------------------------------------------------------------------------
+; Unified functions for the two install loops. All lines were
+; checked (diff) for deviations before merging
 
+Func enableNAP($id)
+	DoDebug("[setup]Enabling NAP")
+	;Check if the NAP Agent service is running.
+	If IsServiceRunning("napagent") == 0 Then
+		DoDebug("[setup]NAP Agent not running")
+		;Set NAP Agent Service to run automatically
+		Run("sc config napagent start= auto", "", @SW_HIDE)
+		;Start the NAP Agent Service
+		RunWait("net start napagent", "", @SW_HIDE)
+		;Set NAPAgentOn to 1 so we know that napagent had to be started
+		$NAPAgentOn = 1
+		UpdateOutput("NAP Agent started.")
+		UpdateProgress(5);
+	Else
+		DoDebug("[setup]NAP Agent Running")
+		UpdateOutput("NAP Agent already started.")
+	EndIf
+
+	;enable Wireless EAPOL NAP client enfrocement
+	$cmd = "netsh nap client set enforcement id=" & $id & " admin=enable"
+	; alex debug remove
+	MsgBox(4096, "bla", $cmd)
+	UpdateProgress(5);
+	$result = RunWait($cmd, "", @SW_HIDE)
+EndFunc   ;==>enableNAP
+
+
+Func configureWired()
+	DoDebug("[setup]802.3 config install")
+	;Get the mac address and network name
+	$ip = "localhost"
+	$adapter = "";
+	$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
+	$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
+	$networkcount = 0
+	UpdateProgress(20);
+	If IsObj($colItems) Then
+		For $objItem In $colItems
+			if ($objItem.AdapterType == "Ethernet 802.3") Then
+				DoDebug("[setup]802.3 device found=" & $objItem.Description)
+				if (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
+					$adapter &= "[setup]Caption: " & $objItem.Caption & @CRLF
+					$adapter &= "[setup]Description: " & $objItem.Description & @CRLF
+					$adapter &= "[setup]Index: " & $objItem.Index & @CRLF
+					$adapter &= "[setup]NetID: " & $objItem.netconnectionid & @CRLF
+					$wired_interface = $objItem.netconnectionid
+					$adapter &= "[setup]Name: " & $objItem.name & @CRLF
+					$adapter &= "[setup]Type: " & $objItem.AdapterType & @CRLF
+					;Ethernet 802.3
+					$adapter &= "[setup]MAC Address: " & $objItem.MACAddress & @CRLF
+					$adapter &= "[setup]*********************"
+					DoDebug("[setup]Applying profile to :" & $adapter)
+					$adapter = ""
+					$networkcount += 1
+					UpdateOutput("Configuring " & $objItem.netconnectionid)
+					$cmd = "netsh lan add profile filename=""" & $wired_xmlfile & """ interface=""" & $wired_interface & """"
+					DoDebug("[setup]802.3 command=" & $cmd)
+					RunWait($cmd, "", @SW_HIDE)
+					UpdateProgress(20);
+				EndIf
+			EndIf
+			;ExitLoop
+		Next
+	Else
+		DoDebug("[setup]No 802.3 Adapter found!")
+	EndIf
+	UpdateOutput("***Wired 8021x profile added")
+	UpdateProgress(10);
+EndFunc   ;==>configureWired
+
+Func startService($ServiceName, $fullname)
+	;Check if Service is running.  If not start it.
+	If IsServiceRunning($ServiceName) == 0 Then
+		DoDebug("[setup]" & $fullname & " not running")
+		;Set service to run automatically
+		Run("sc config " & $ServiceName & " start= auto", "", @SW_HIDE)
+		;Start the service
+		RunWait("net start " & $ServiceName, "", @SW_HIDE)
+		;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
+		$WZCSVCStarted = 1 ;TODO: possible bug - also set on dot1x service start?
+
+		If $ServiceName == "DOT3SVC" Then
+			UpdateOutput("******Wired Dot1x Service Started")
+		Else
+			UpdateOutput("******Possible supplicant already managing device. WZC Started manually.")
+		EndIf
+
+		UpdateProgress(5);
+	Else
+		DoDebug("[setup]WZC Already Running")
+	EndIf
+EndFunc   ;==>startService
+
+Func removeProfiles($hClientHandle, $pGUID)
+	DoDebug("[setup]Removing SSID" & $SSID1)
+	$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
+	$doremove = 1
+	If (UBound($profiles) == 0) Then
+		DoDebug("[setup]No wireless profiles to remove found")
+		$doremove = 0
+	EndIf
+	If ($doremove == 1) Then
+		For $ssidremove In $profiles
+			if (StringCompare($ssidremove, $SSID1, 0) == 0) Then
+				RemoveSSID($hClientHandle, $pGUID, $ssidremove)
+				UpdateOutput("Removed SSID:")
+				UpdateOutput($ssidremove)
+			EndIf
+			if (StringCompare($ssidremove, $SSID2, 0) == 0) Then
+				RemoveSSID($hClientHandle, $pGUID, $ssidremove)
+				UpdateOutput("Removed SSID:")
+				UpdateOutput($ssidremove)
+			EndIf
+			if (StringCompare($ssidremove, $SSID3, 0) == 0) Then
+				RemoveSSID($hClientHandle, $pGUID, $ssidremove)
+				UpdateOutput("Removed SSID:")
+				UpdateOutput($ssidremove)
+			EndIf
+		Next
+	EndIf
+EndFunc   ;==>removeProfiles
 
 
 ;-------------------------------------------------------------------------
@@ -780,6 +904,10 @@ if ($dump_to_file == 1) Then
 		DoDebug("Unable to open debug dump file.:" & $file)
 	EndIf
 EndIf
+
+
+
+
 ;-----------------------------------------------------------
 ;START MAIN LOOP
 ;-----------------------------------------------------------
@@ -898,7 +1026,8 @@ While 1
 			EndIf
 
 			;**************************************************************************************************************
-			;Check OS then run appropriate code
+
+
 			If $os == "xp" Then
 				UpdateOutput("Detected Windows XP")
 				CloseWindows()
@@ -963,19 +1092,10 @@ While 1
 
 
 				if ($wireless == 1) Then
-					;Check if the Wireless Zero Configuration Service is running.  If not start it.
+
+					; todo: determine service name on OS detection
 					If IsServiceRunning("WZCSVC") == 0 Then
-						DoDebug("[setup]WZC not running")
-						;Set Wireless Zero Configuration Service to run automatically
-						Run("sc config WZCSVC start= auto", "", @SW_HIDE)
-						;Start the Wireless Zero Configuration Service
-						RunWait("net start WZCSVC", "", @SW_HIDE)
-						;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
-						$WZCSVCStarted = 1
-						UpdateOutput("******Possible supplicant already managing device. WZC Started manually.")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]WZC Already Running")
+						startService("WZCSVC", "Wireless Zero Configuration")
 					EndIf
 
 					;check XML profile files are ok
@@ -1007,20 +1127,10 @@ While 1
 					$XMLProfile = FileRead($xmlfile)
 				EndIf
 
-				if ($wired == 1) Then
-					;Check if the DOT1XSVC (Wired LAN Auto Config) Service is running.  If not start it.
+				If ($wired == 1) Then
+
 					If IsServiceRunning("DOT3SVC") == 0 Then
-						DoDebug("[setup]DOT3SVC not running")
-						;Set Wireless Zero Configuration Service to run automatically
-						Run("sc config DOT3SVC start= auto", "", @SW_HIDE)
-						;Start the Wireless Zero Configuration Service
-						RunWait("net start DOT3SVC", "", @SW_HIDE)
-						;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
-						$WZCSVCStarted = 1
-						UpdateOutput("******Wired Dot1x Service Started")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]DOT3SVC Already Running")
+						startService("DOT3SVC", "Wired LAN Auto Config")
 					EndIf
 
 					;check XML profile files are ok
@@ -1045,6 +1155,7 @@ While 1
 
 				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
 				if ($wireless == 1) Then
+
 					if ($run_already < 1) Then
 						$hClientHandle = _Wlan_OpenHandle()
 						$Enum = _Wlan_EnumInterfaces($hClientHandle)
@@ -1061,35 +1172,13 @@ While 1
 					$pGUID = $Enum[0][0]
 					DoDebug("[setup]Adapter=" & $Enum[0][1])
 
-					;Check for profiles to remove
+					;------------------------------------------REMOVING_PROFILES
 					if ($removessid > 0) Then
-						DoDebug("[setup]Removing SSID" & $SSID1)
-						$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
-						$doremove = 1
-						If (UBound($profiles) == 0) Then
-							DoDebug("[setup]No wireless profiles to remove found")
-							$doremove = 0
-						EndIf
-						If ($doremove == 1) Then
-							For $ssidremove In $profiles
-								if (StringCompare($ssidremove, $SSID1, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-								if (StringCompare($ssidremove, $SSID2, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-								if (StringCompare($ssidremove, $SSID3, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-							Next
-						EndIf
+						removeProfiles($hClientHandle, $pGUID)
 					EndIf
+
+
+
 
 					;SET THE PROFILE
 					UpdateProgress(10);
@@ -1233,73 +1322,17 @@ While 1
 					$run_already = 1
 
 				EndIf
-				;------------------------------------------------------------------------------------------------------WIRED CONFIG
+
+				;---------------------------------------------------WIRED_CONFIG
 				if ($wired == 1) Then
-					;Get the mac address and network name
-					$ip = "localhost"
-					$adapter = "";
-					$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-					$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
-					$networkcount = 0
-					UpdateProgress(20);
-					If IsObj($colItems) Then
-						For $objItem In $colItems
-							if ($objItem.AdapterType == "Ethernet 802.3") Then
-								if (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
-									$adapter &= "Caption: " & $objItem.Caption & @CRLF
-									$adapter &= "Description: " & $objItem.Description & @CRLF
-									$adapter &= "Index: " & $objItem.Index & @CRLF
-									$adapter &= "NetID: " & $objItem.netconnectionid & @CRLF
-									$wired_interface = $objItem.netconnectionid
-									$adapter &= "Name: " & $objItem.name & @CRLF
-									$adapter &= "Type: " & $objItem.AdapterType & @CRLF
-									;Ethernet 802.3
-									$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
-									$adapter &= "*********************"
-									DoDebug("[setup] Applying profile to :" & $adapter)
-									$adapter = ""
-									$networkcount += 1
-									UpdateOutput("Configuring " & $objItem.netconnectionid)
-									$cmd = "netsh lan add profile filename=" & $wired_xmlfile & " interface=" & $wired_interface
-									DoDebug("[setup]802.3 command=" & $cmd)
-									RunWait($cmd, "", @SW_HIDE)
-									UpdateProgress(20);
-								EndIf
-							EndIf
-							ExitLoop
-						Next
-					Else
-						DoDebug("[setup]No 802.3 Adapter found!")
-					EndIf
-					UpdateOutput("Wired 8021x profile added")
-					UpdateProgress(10);
+					configureWired()
 				EndIf
-				;------------------------------------------------------------------------------------------------------NAP/SoH CONFIG
-				;Enable NAP
+
+				;-------------------------------------------------NAP/SoH Config
 				if ($nap == 1) Then
-					DoDebug("[setup]Enabling NAP")
-					;Check if the NAP Agent service is running.
-					If IsServiceRunning("napagent") == 0 Then
-						DoDebug("[setup]NAP Agent not running")
-						;Set NAP Agent Service to run automatically
-						Run("sc config napagent start= auto", "", @SW_HIDE)
-						;Start the NAP Agent Service
-						RunWait("net start napagent", "", @SW_HIDE)
-						;Set NAPAgentOn to 1 so we know that napagent had to be started
-						$NAPAgentOn = 1
-						UpdateOutput("NAP Agent started.")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]NAP Agent Running")
-						UpdateOutput("NAP Agent already started.")
-					EndIf
-
-					;enable Wireless EAPOL NAP client enfrocement
-					$cmd = "netsh nap client set enforcement id=79620 admin=enable"
-					UpdateProgress(5);
-					$result = RunWait($cmd, "", @SW_HIDE)
-
+					enableNAP(79620)
 				EndIf
+
 
 				;END OF XP CODE**********************************************************************************************************
 			Else
@@ -1312,19 +1345,10 @@ While 1
 				EndIf
 
 				If ($wireless == 1) Then
-					;Check if the Wireless Zero Configuration Service is running.  If not start it.
+
+					; todo: determine service name on OS detection
 					If IsServiceRunning("WLANSVC") == 0 Then
-						DoDebug("[setup]WLANSVC not running")
-						;Set Wireless Zero Configuration Service to run automatically
-						Run("sc config WLANSVC start= auto", "", @SW_HIDE)
-						;Start the Wireless Zero Configuration Service
-						RunWait("net start WLANSVC", "", @SW_HIDE)
-						;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
-						$WZCSVCStarted = 1
-						UpdateOutput("****** Possible supplicant already managing device. WZC Started manually.")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]WLANSVC Running")
+						startService("WLANSVC", "Wireless Zero Configuration")
 					EndIf
 
 					UpdateOutput("Configuring Wireless Profile...")
@@ -1369,19 +1393,9 @@ While 1
 
 
 				if ($wired == 1) Then
-					;Check if the DOT1XSVC (Wired LAN Auto Config) Service is running.  If not start it.
+
 					If IsServiceRunning("DOT3SVC") == 0 Then
-						DoDebug("[setup]DOT3SVC not running")
-						;Set Wireless Zero Configuration Service to run automatically
-						Run("sc config DOT3SVC start= auto", "", @SW_HIDE)
-						;Start the Wireless Zero Configuration Service
-						RunWait("net start DOT3SVC", "", @SW_HIDE)
-						;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
-						$WZCSVCStarted = 1
-						UpdateOutput("******Wired Dot1x Service Started")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]DOT3SVC Already Running")
+						startService("DOT3SVC", "Wired LAN Auto Config")
 					EndIf
 
 					;check XML profile files are ok
@@ -1428,34 +1442,10 @@ While 1
 					DoDebug("[setup] adpter=" & $Enum[0][1])
 
 					;updateoutput($hClientHandle & "," & $Enum[0][1] & "," &$pGUID)
-					;Check for profiles to remove
+
+					;------------------------------------------REMOVING_PROFILES
 					if ($removessid > 0) Then
-						DoDebug("[setup]Removing SSID")
-						$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
-						$doremove = 1
-						If (UBound($profiles) == 0) Then
-							DoDebug("[setup]No wireless profiles to remove found")
-							$doremove = 0
-						EndIf
-						If ($doremove == 1) Then
-							For $ssidremove In $profiles
-								if (StringCompare($ssidremove, $SSID1, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-								if (StringCompare($ssidremove, $SSID2, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-								if (StringCompare($ssidremove, $SSID3, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-							Next
-						EndIf
+						removeProfiles($hClientHandle, $pGUID)
 					EndIf
 
 					;SET THE PROFILE
@@ -1541,7 +1531,7 @@ While 1
 					While 1
 						;check if connected and got an ip
 						UpdateProgress(5)
-                        $retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
+						$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
 						if (IsArray($retry_state)) Then
 							if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
 								$ip1 = @IPAddress1
@@ -1601,73 +1591,14 @@ While 1
 					;RunWait ("net start WZCSVC","",@SW_HIDE)
 				EndIf
 
-				;------------------------------------------------------------------------------------------------------WIRED CONFIG
+				;---------------------------------------------------WIRED_CONFIG
 				if ($wired == 1) Then
-					DoDebug("[setup]802.3 config install")
-					;Get the mac address and network name
-					$ip = "localhost"
-					$adapter = "";
-					$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-					$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
-					$networkcount = 0
-					UpdateProgress(20);
-					If IsObj($colItems) Then
-						For $objItem In $colItems
-							if ($objItem.AdapterType == "Ethernet 802.3") Then
-								DoDebug("[setup]802.3 device found=" & $objItem.Description)
-								if (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
-									$adapter &= "[setup]Caption: " & $objItem.Caption & @CRLF
-									$adapter &= "[setup]Description: " & $objItem.Description & @CRLF
-									$adapter &= "[setup]Index: " & $objItem.Index & @CRLF
-									$adapter &= "[setup]NetID: " & $objItem.netconnectionid & @CRLF
-									$wired_interface = $objItem.netconnectionid
-									$adapter &= "[setup]Name: " & $objItem.name & @CRLF
-									$adapter &= "[setup]Type: " & $objItem.AdapterType & @CRLF
-									;Ethernet 802.3
-									$adapter &= "[setup]MAC Address: " & $objItem.MACAddress & @CRLF
-									$adapter &= "[setup]*********************"
-									DoDebug("[setup]Applying profile to :" & $adapter)
-									$adapter = ""
-									$networkcount += 1
-									UpdateOutput("Configuring " & $objItem.netconnectionid)
-									$cmd = "netsh lan add profile filename=""" & $wired_xmlfile & """ interface=""" & $wired_interface & """"
-									DoDebug("[setup]802.3 command=" & $cmd)
-									RunWait($cmd, "", @SW_HIDE)
-									UpdateProgress(20);
-								EndIf
-							EndIf
-							;ExitLoop
-						Next
-					Else
-						DoDebug("[setup]No 802.3 Adapter found!")
-					EndIf
-					UpdateOutput("***Wired 8021x profile added")
-					UpdateProgress(10);
+					configureWired()
 				EndIf
-				;------------------------------------------------------------------------------------------------------NAP/SoH CONFIG
-				;Enable NAP
-				if ($nap == 1) Then
-					DoDebug("[setup]Enabling NAP")
-					;Check if the NAP Agent service is running.
-					If IsServiceRunning("napagent") == 0 Then
-						DoDebug("[setup]nap agent not running")
-						;Set NAP Agent Service to run automatically
-						Run("sc config napagent start= auto", "", @SW_HIDE)
-						;Start the NAP Agent Service
-						RunWait("net start napagent", "", @SW_HIDE)
-						;Set NAPAgentOn to 1 so we know that napagent had to be started
-						$NAPAgentOn = 1
-						UpdateOutput("NAP Agent started.")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]NAP Agent Running")
-						UpdateOutput("NAP Agent already started.")
-					EndIf
 
-					;enable EAP NAP client enfrocement
-					$cmd = "netsh nap client set enforcement id=79623 admin=enable"
-					UpdateProgress(5);
-					$result = RunWait($cmd, "", @SW_HIDE)
+				;-------------------------------------------------NAP/SoH Config
+				if ($nap == 1) Then
+					enableNAP(79623)
 				EndIf
 
 				;install scheduled task
