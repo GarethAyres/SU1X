@@ -234,6 +234,37 @@ Else
 EndIf
 
 
+; ---------------------------------------------------------------
+;Config
+
+Func getConfig($section, $item)
+	$value = IniRead($CONFIGFILE, $section, $item, "ConfigError")
+	If @error Then
+		MsgBox(4096, "", "Error occured retrieving value from config")
+	EndIf
+	Return $value
+EndFunc   ;==>getConfig
+
+
+Func iterateConfig($section)
+	; return every value under a given section, useful for iterating
+	; multiple ssid to remove/add for instance.
+	$content = IniReadSection($CONFIGFILE, $section)
+	If @error Then
+		MsgBox(4096, "", "Error occured iterating the config file")
+	Else
+		$size = UBound($content, 1)
+		Dim $values[$size-1]
+		For $i = 1 to $size - 1
+			$values[$i-1] = IniRead($CONFIGFILE, $section, $content[$i][0], "")
+		Next
+		Return $values
+	EndIf
+EndFunc   ;==>iterateConfig
+
+	; TODO: strip leading/trailing spaces/quotes.. maybe
+EndFunc   ;==>iterateConfig
+
 
 ; ---------------------------------------------------------------
 ;Functions
