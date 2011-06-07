@@ -254,17 +254,13 @@ Func iterateConfig($section)
 		MsgBox(4096, "", "Error occured iterating the config file")
 	Else
 		$size = UBound($content, 1)
-		Dim $values[$size-1]
-		For $i = 1 to $size - 1
-			$values[$i-1] = IniRead($CONFIGFILE, $section, $content[$i][0], "")
+		Dim $values[$size - 1]
+		For $i = 1 To $size - 1
+			$values[$i - 1] = IniRead($CONFIGFILE, $section, $content[$i][0], "")
 		Next
 		Return $values
 	EndIf
 EndFunc   ;==>iterateConfig
-
-	; TODO: strip leading/trailing spaces/quotes.. maybe
-EndFunc   ;==>iterateConfig
-
 
 ; ---------------------------------------------------------------
 ;Functions
