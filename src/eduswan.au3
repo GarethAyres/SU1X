@@ -950,17 +950,33 @@ Func setWirelessProfile($SSID, $os, $hClientHandle, $pGUID)
 	; try to load xml from filename = "{ssidname}_{os}.xml"
 	$ssidxml = $SSID & "_" & $os & ".xml"
 
+	; TODO: import correct profile based on new xml structure
 	If FileExists($ssidxml) Then
 		$XMLProfile = FileRead($ssidxml)
 		UpdateOutput("Using ssid settings from " & $ssidxml)
 	Else
 		; load a default file.. not sure which one -A
 		UpdateOutput("Using default ssid settings")
-		$XMLProfile = FileRead("wireless-wpa.xml")
+		$XMLProfile = FileRead("wireless-7.xml")
 	EndIf
 	$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
 	DoDebug("[setup]setProfile return code (profile1" & $xmlfile & ") =" & $a_iCall[0])
 EndFunc   ;==>setWirelessProfile
+
+Func setWirelessEAPCreds($user, $pass, $hClientHandle, $pGUID, $SSID)
+	Local $credentials[4]
+	$credentials[0] = "PEAP-MSCHAP" ; EAP method
+	$credentials[1] = "" ;domain
+	$credentials[2] = $user ; username
+	$credentials[3] = $pass ; password
+	DoDebug("[setup]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID & $credentials[2])
+	$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
+	If @error Then
+		DoDebug("[setup]credential error=" & @ScriptLineNumber & @error & @extended & $setCredentials)
+		UpdateOutput("User/Pass not set")
+	EndIf
+	DoDebug("[reauth]Set Credentials=" & $credentials[2] & $credentials[3] & $setCredentials)
+EndFunc   ;==>setWirelessEAPCreds
 
 
 
@@ -1078,9 +1094,7 @@ While 1
 				EndIf
 			EndIf
 
-
 			;**************************************************************************************************************
-
 
 			If $os == "xp" Then
 				UpdateOutput("Detected Windows XP")
@@ -1461,38 +1475,23 @@ While 1
 
 					;-------------------------------------------SETTING_PROFILES
 
-					$installprofiles = IterateConfig("getprofile")
+					$addprofiles = IterateConfig("getprofile")
 
 					; install wireless profiles for all the SSID's listed in
 					; the config file under the [getprofile] section.
-					For $i = 0 To UBound($installprofiles) - 1;
-						;debug
-						MsgBox(4096, "ssid to install", $installprofiles[$i])
-						setWirelessProfile($installprofiles[$i], $os, $hClientHandle, $pGUID)
-
-
+					For $profile In $addprofiles
+						MsgBox(4096, "ssid to install", $profile)
+						setWirelessProfile($profile, $os, $hClientHandle, $pGUID)
+						if ($showup > 0) Then
+							setWirelessEAPCreds($user, $pass, $hClientHandle, $pGUID, $profile)
+						EndIf
 						; set eap creds
 						; set priority
 					Next
 
-					;*****************************SET  profile EAP credentials
-					if ($showup > 0) Then
-						Local $credentials[4]
-						$credentials[0] = "PEAP-MSCHAP" ; EAP method
-						$credentials[1] = "" ;domain
-						$credentials[2] = $user ; username
-						$credentials[3] = $pass ; password
-						DoDebug("[setup]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID & $credentials[2])
-						$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
-						If @error Then
-							DoDebug("[setup]credential error=" & @ScriptLineNumber & @error & @extended & $setCredentials)
-							UpdateOutput("User/Pass not set")
-						EndIf
-						DoDebug("[reauth]Set Credentials=" & $credentials[2] & $credentials[3] & $setCredentials)
-					EndIf
 
 					;set priority of new profile
-					SetPriority($hClientHandle, $pGUID, $SSID, $priority)
+					;SetPriority($hClientHandle, $pGUID, $SSID, $priority)
 
 
 					;make sure windows can manage wifi card
@@ -2038,7 +2037,7 @@ While 1
 			;ExitLoop
 		EndIf
 
-		;***************************************************************************************REMOVE EDUROAM
+		;*********************************************************REMOVE EDUROAM
 		If $msg == $remove_wifi Then
 			#RequireAdmin
 			checkAdminRights()
@@ -2056,21 +2055,18 @@ While 1
 					ExitLoop (1)
 				EndIf
 				$pGUID = $Enum[0][0]
+
+
 				;Check for profiles to remove
-				DoDebug("[remove]Removing SSID" & $SSID)
-				$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
-				$doremove = 1
-				If (UBound($profiles) == 0) Then
-					DoDebug("[remove]No wireless profiles found")
-					$doremove = 0
-				EndIf
-				If ($doremove == 1) Then
-					For $ssidremove In $profiles
-						if (StringCompare($ssidremove, $SSID, 0) == 0) Then
-							RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-							UpdateOutput("Removed SSID:" & $ssidremove)
-							UpdateProgress(20);
-						EndIf
+				$delprofiles = IterateConfig("remove")
+
+				If (UBound($delprofiles) == 0) Then
+					UpdateOutput("No wireless profiles to remove found")
+				Else
+					For $ssidname In $delprofiles
+						RemoveSSID($hClientHandle, $pGUID, $ssidname)
+						UpdateOutput("Removed SSID:" & $ssidname)
+						UpdateProgress(20);
 					Next
 				EndIf
 				;remove scheduled task
@@ -2127,9 +2123,9 @@ While 1
 			UpdateProgress(100);
 			;code to remove proxy settings also maybe?
 		EndIf
-		;***************************************************************************************REMOVE EDUROAM
+		;*********************************************************REMOVE EDUROAM
 
-		;***************************************************************************************ADD PRINTER
+		;************************************************************ADD PRINTER
 		If $msg == $print Then
 			#RequireAdmin
 			checkAdminRights()
