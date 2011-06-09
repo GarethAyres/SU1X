@@ -108,70 +108,70 @@ GUICreate("Config Capture Tool", 350, 100)
 GUISetBkColor (0xffff00) ;---------------------------------white
 $progressbar1 = GUICtrlCreateProgress (5,5,340,20)
 ;----------------------------------------------------------Drop Down menu of Interfaces
-	;Get the mac address and network name
-	$ip = "localhost"
-	$adapter ="";
-	$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-	$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
-	$networkcount=0
-	$wireless=" [wired]"
-        If IsObj($colItems) Then
-            For $objItem In $colItems
-				if (StringInStr($objItem.netconnectionid,"Local") Or StringInStr($objItem.description,"Wireless") Or StringInStr($objItem.description,"Wi") Or StringInStr($objItem.description,"802.11")) Then
-				if (StringInStr($objItem.description,"Wireless") Or StringInStr($objItem.description,"Wi") Or StringInStr($objItem.description,"802.11")) Then $wireless=" [wireless]"
-				$networkcount+=1
-				$adapter&="Caption: " &$objItem.Caption & @CRLF
-				$adapter&="Description: " &$objItem.Description& @CRLF
-				$adapter&="Index: " &$objItem.Index & @CRLF
-				$adapter&="NetID: " &$objItem.netconnectionid & @CRLF
-				$adapter&="Name: " &$objItem.name & @CRLF
-				$adapter&="Type: " &$objItem.AdapterType & @CRLF
-				$adapter&="MAC Address: "& $objItem.MACAddress & @CRLF
-				$adapter&="*********************"
-				;DoDebug($adapter)
-				;MsgBox(1,"2",$adapter)
-				$adapter=""
-				if $networkcount=1 Then
-					$combo = GUICtrlCreateCombo($objItem.description & $wireless, 5, 30, 340, 20 ) ; create first item
-				Else
-					GUICtrlSetData(-1,$objItem.description & $wireless) ; add other item snd set a new default
-				EndIf
-				GUISetState()
-			EndIf
-			DoDebug("adapter = " & $objItem.netconnectionid & "and desc = " & $objItem.description)
-			Next
-        Else
-            DoDebug("[setup]No Adapters found!")
-			MsgBox(1,"Error","No Networking adapters found [language issue?], populating with all possible adapters")
-			; list all adapters, including software adapters
-				$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-				$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
-			For $objItem In $colItems
-				$networkcount+=1
-				$adapter&="Caption: " &$objItem.Caption & @CRLF
-				$adapter&="Description: " &$objItem.Description& @CRLF
-				$adapter&="Index: " &$objItem.Index & @CRLF
-				$adapter&="NetID: " &$objItem.netconnectionid & @CRLF
-				$adapter&="Name: " &$objItem.name & @CRLF
-				$adapter&="Type: " &$objItem.AdapterType & @CRLF
-				$adapter&="MAC Address: "& $objItem.MACAddress & @CRLF
-				$adapter&="*********************"
-				;DoDebug($adapter)
-				;MsgBox(1,"2",$adapter)
-				$adapter=""
-				if $networkcount=1 Then
-					$combo = GUICtrlCreateCombo($objItem.description & $wireless, 5, 30, 340, 20 ) ; create first item
-				Else
-					GUICtrlSetData(-1,$objItem.description & $wireless) ; add other item snd set a new default
-				EndIf
-				GUISetState()
-			DoDebug("adapter = " & $objItem.netconnectionid & "and desc = " & $objItem.description)
-			Next
+;Get the mac address and network name
+$ip = "localhost"
+$adapter =""
+$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
+$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
+$networkcount=0
+$wireless=" [wired]"
+If IsObj($colItems) Then
+    For $objItem In $colItems
+        if (StringInStr($objItem.netconnectionid,"Local") Or StringInStr($objItem.description,"Wireless") Or StringInStr($objItem.description,"Wi") Or StringInStr($objItem.description,"802.11")) Then
+            if (StringInStr($objItem.description,"Wireless") Or StringInStr($objItem.description,"Wi") Or StringInStr($objItem.description,"802.11")) Then $wireless=" [wireless]"
+            $networkcount+=1
+            $adapter&="Caption: " &$objItem.Caption & @CRLF
+            $adapter&="Description: " &$objItem.Description& @CRLF
+            $adapter&="Index: " &$objItem.Index & @CRLF
+            $adapter&="NetID: " &$objItem.netconnectionid & @CRLF
+            $adapter&="Name: " &$objItem.name & @CRLF
+            $adapter&="Type: " &$objItem.AdapterType & @CRLF
+            $adapter&="MAC Address: "& $objItem.MACAddress & @CRLF
+            $adapter&="*********************"
+            ;DoDebug($adapter)
+            ;MsgBox(1,"2",$adapter)
+            $adapter=""
+            if $networkcount=1 Then
+                $combo = GUICtrlCreateCombo($objItem.description & $wireless, 5, 30, 340, 20 ) ; create first item
+            Else
+                GUICtrlSetData(-1,$objItem.description & $wireless) ; add other item and set a new default
+            EndIf
+            GUISetState()
         EndIf
+        DoDebug("adapter = " & $objItem.netconnectionid & "and desc = " & $objItem.description)
+    Next
+Else
+    DoDebug("[setup]No Adapters found!")
+    MsgBox(1,"Error","No Networking adapters found [language issue?], populating with all possible adapters")
+    ; list all adapters, including software adapters
+    $objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
+    $colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
+    For $objItem In $colItems
+        $networkcount+=1
+        $adapter&="Caption: " &$objItem.Caption & @CRLF
+        $adapter&="Description: " &$objItem.Description& @CRLF
+        $adapter&="Index: " &$objItem.Index & @CRLF
+        $adapter&="NetID: " &$objItem.netconnectionid & @CRLF
+        $adapter&="Name: " &$objItem.name & @CRLF
+        $adapter&="Type: " &$objItem.AdapterType & @CRLF
+        $adapter&="MAC Address: "& $objItem.MACAddress & @CRLF
+        $adapter&="*********************"
+        ;DoDebug($adapter)
+        ;MsgBox(1,"2",$adapter)
+        $adapter=""
+        if $networkcount=1 Then
+            $combo = GUICtrlCreateCombo($objItem.description & $wireless, 5, 30, 340, 20 ) ; create first item
+        Else
+            GUICtrlSetData(-1,$objItem.description & $wireless) ; add other item snd set a new default
+        EndIf
+        GUISetState()
+        DoDebug("adapter = " & $objItem.netconnectionid & "and desc = " & $objItem.description)
+    Next
+EndIf
 $exitb = GUICtrlCreateButton("Exit", 290, 60, 50)
 ;-------------------------------------------------------------------------
 ;TABS
-$installb = GUICtrlCreateButton("Capture", 10, 60, 50)
+$captureb = GUICtrlCreateButton("Capture", 10, 60, 50)
 ;-----------------------------------------------------------
 GuiSetState(@SW_SHOW)
 While 1
@@ -187,7 +187,7 @@ While 1
         EndIf
         ;-----------------------------------------------------------
         ;If install button clicked
-        if $msg = $installb Then
+        if $msg = $captureb Then
             ;-------------------------------------------------------------------------
             ;select value from drop down menu
             $interface = GUICtrlRead($combo)
