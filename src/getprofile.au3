@@ -68,6 +68,8 @@ $wireless=IniRead("config.ini", "su1x", "wireless", "1")
 $wireless=IniRead("config.ini", "su1x", "wireless", "1")
 $DEBUG=IniRead("config.ini", "su1x", "DEBUG", "0")
 $progressbar1 = ""
+$os = "win7"
+
 
 ; ---------------------------------------------------------------
 ;Functions
@@ -101,7 +103,47 @@ Func UpdateProgress($percent)
 		GUICtrlSetData ($progressbar1,$Progress_meter)
 EndFunc
 
+;return OS string for use in XML file
+Func GetOSVersion()
+    Select
+    Case StringInStr(@OSVersion, "VISTA", 0)
+        Return "WIN7"
+    Case StringInStr(@OSVersion, "7", 0)
+        Return "WIN7"
+    Case StringInStr(@OSVersion, "XP", 0)
+        If @OSServicePack == "Service Pack 2" Then
+            Return "XPSP2"
+        Else
+            Return "XP"
+        EndIf
+    EndSelect
+EndFunc
 
+;simple function to save the profile to a file
+Func SaveXMLProfile($filename, $profile)
+    If (FileExists($filename)) Then
+        $backup_filename = $filename & ".backup"
+        DoDebug("File exists, Backing up and then deleting...")
+        If (FileExists($backup_filename)) Then FileDelete($backup_filename)
+        FileMove($filename,$backup_filename);
+        FileDelete($filename)
+    EndIf
+    FileWrite($filename, $profile)
+EndFunc
+
+Func DumpWiredXMLProfile($interface)
+    $filename = $interface&".xml"
+    If (FileExists($filename)) Then
+        $backup_filename = $filename & ".backup"
+        DoDebug("File exists, Backing up and then deleting...")
+        If (FileExists($backup_filename)) Then FileDelete($backup_filename)
+        FileMove($filename,$backup_filename)
+        FileDelete($filename)
+    EndIf
+    $cmd = "netsh lan export profile folder=""" & @ScriptDir & """ interface=" & """" & $interface & """"
+    DoDebug("[setup]802.3 command="& $cmd)
+    RunWait($cmd, "", @SW_HIDE)
+EndFunc
 ;-------------------------------------------------------------------------
 ; Start of GUI code
 GUICreate("Config Capture Tool", 350, 100)
@@ -248,15 +290,8 @@ While 1
                 ;doDebug(_Wlan_GetErrorMessage($a_iCall[0]))
                 ;ConsoleWrite($a_iCall[5] & @LF)
                 UpdateProgress(10);
-                If (FileExists($SSID & ".xml")) Then
-                    DoDebug("File exists, Backing up and then deleting...")
-                    If (FileExists($SSID & "-backup.xml")) Then FileDelete($SSID & "-backup.xml")
-                    FileMove($SSID & ".xml",$SSID & "-backup.xml");
-                    FileDelete($SSID & ".xml")
-                EndIf
+                SaveXMLProfile($SSID & ".xml", $profile)
                 UpdateProgress(10);
-                $filename = $SSID & ".xml"
-                FileWrite($filename, $profile)
                 $wired_interface = $filename ;What's this???
             Else
                 ;---------------------------------------------------------------------------------------------------WIRED Capture
@@ -279,19 +314,9 @@ While 1
                 ;capture profile
                 ;backup exisiting
                 UpdateProgress(20);
-                If (FileExists($wired_interface&".xml")) Then
-                    DoDebug("File exists, Backing up and then deleting...")
-                    If (FileExists($wired_interface&"-backup.xml")) Then FileDelete($wired_interface&"-backup.xml")
-                    FileMove($wired_interface&".xml",$wired_interface&"-backup.xml");
-                    FileDelete($wired_interface&".xml")
-                EndIf
+                DumpWiredXMLProfile($wired_interface)
                 UpdateProgress(10);
-                $filename = @ScriptDir
-                $cmd = "netsh lan export profile folder=""" & $filename & """ interface=" & """" & $wired_interface & """"
-                DoDebug("[setup]802.3 command="& $cmd)
-                RunWait($cmd, "", @SW_HIDE)
                 $wired_interface&=".xml"
-
             EndIf
             GUICtrlSetData ($progressbar1,100)
             doDebug("Complete. Exported to "&$filename)
