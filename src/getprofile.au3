@@ -292,7 +292,6 @@ While 1
                     SaveXMLProfile($SSID & ".xml", $profile)
                     UpdateProgress(10);
                 EndIf
-                $wired_interface = $filename
                 ;$wifi_eduroam=_Wlan_GetProfile($hClientHandle, $pGUID,$SSID)
                 ;$findProfile = _ArrayFindAll($wifi_eduroam, $SSID)
                 ;if (@error) Then
@@ -336,7 +335,7 @@ While 1
             EndIf
             GUICtrlSetData ($progressbar1,100)
             doDebug("Complete. Exported to "&$wired_interface&".xml")
-            MsgBox (16, "Complete","The profile has been exported to " & $wired_interface &".xml. Do not forget to point your config.ini to the right xml file")
+            MsgBox (16, "Complete","The profiles have been exported. Do not forget to point your config.ini to the right xml files")
             ;-------------------------------------------------------------------------
             ; All done... report any errors or anything
 
