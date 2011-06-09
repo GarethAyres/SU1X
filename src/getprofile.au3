@@ -63,7 +63,7 @@ EndIf
 $VERSION = "V1.2"
 $WZCSVCStarted = 0
 $progress_meter = 0
-$SSID = IniRead("config.ini", "getprofile", "ssid", "eduroam")
+$SSID = IniRead("config.ini", "getprofile", "ssid1", "eduroam")
 $wireless=IniRead("config.ini", "su1x", "wireless", "1")
 $wireless=IniRead("config.ini", "su1x", "wireless", "1")
 $DEBUG=IniRead("config.ini", "su1x", "DEBUG", "0")
@@ -283,10 +283,23 @@ While 1
             if (StringInStr($interface,"wireless")) Then
                 ;---------------------------------------------------------------------------------------------------WIRELESS Capture
                 GUICtrlSetData ($progressbar1,0)
-                UpdateProgress(10);
+                ;For $CAPSSID in $SSID_ARR
+                ;    UpdateProgress(10)
+                ;    DoDebug("Capturing "&$SSID)
+                ;    $profile = CaptureWirelessProfile($SSID)
+                ;    if (@error) Then
+                ;        doDebug("Couldn't capture "&$SSID&" profile")
+                ;    Else                
+                ;        UpdateProgress(10);
+                ;        SaveXMLProfile($SSID & ".xml", $profile)
+                ;        UpdateProgress(10);
+                ;    EndIf
+                ;Next
+                UpdateProgress(10)
+                DoDebug("Capturing "&$SSID)
                 $profile = CaptureWirelessProfile($SSID)
                 if (@error) Then
-                    doDebug("Couldn't capture "&$ssid&" profile")
+                    doDebug("Couldn't capture "&$SSID&" profile")
                 Else                
                     UpdateProgress(10);
                     SaveXMLProfile($SSID & ".xml", $profile)
@@ -334,7 +347,6 @@ While 1
                 UpdateProgress(10);
             EndIf
             GUICtrlSetData ($progressbar1,100)
-            doDebug("Complete. Exported to "&$wired_interface&".xml")
             MsgBox (16, "Complete","The profiles have been exported. Do not forget to point your config.ini to the right xml files")
             ;-------------------------------------------------------------------------
             ; All done... report any errors or anything
