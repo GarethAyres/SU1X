@@ -175,135 +175,134 @@ $installb = GUICtrlCreateButton("Capture", 10, 60, 50)
 ;-----------------------------------------------------------
 GuiSetState(@SW_SHOW)
 While 1
- While 1
-  $msg = GUIGetMsg()
-;-----------------------------------------------------------Exit Tool
-  If $msg = $exitb Then
-  exit
-    ExitLoop
-EndIf
-If $msg = $GUI_EVENT_CLOSE Then
-	Exit
-EndIf
-;-----------------------------------------------------------
-;If install button clicked
-if $msg = $installb Then
-;-------------------------------------------------------------------------
-;select value from drop down menu
-$interface = GUICtrlRead($combo)
-doDebug("selected interface = " & $interface)
-if (StringInStr($interface,"wireless")) Then
-;---------------------------------------------------------------------------------------------------WIRELESS Capture
-GUICtrlSetData ($progressbar1,0)
-UpdateProgress(10);
-$hClientHandle = _Wlan_OpenHandle()
-if @error Then
-		doDebug("No Wireless Interface Found. Exiting... Error Code = " & @error)
-		Exit
-	EndIf
-$Enum = _Wlan_EnumInterfaces($hClientHandle)
-if @error Then doDebug("No Interface Found")
-
-						If (UBound($Enum) == 0) Then
-						DoDebug("[setup]Enumeration of wlan adapter" & @error)
-						MsgBox(16, "Error", "No Wireless Adapter Found.")
-						Exit
-					EndIf
-					$pGUID = $Enum[0][0]
-					DoDebug("Adapter=" & $Enum[0][1])
-					$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
-						If (UBound($profiles) == 0) Then
-							DoDebug("[setup]No wireless profiles found")
-							exit;
-						Else
-							DoDebug("found " & UBound($profiles) & "profiles")
-						EndIf
-
-UpdateProgress(10);
-$profile=_Wlan_GetProfileXML($hClientHandle, $pGUID, $SSID)
-;$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanGetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID,"ptr", 0, "wstr*", 0, "ptr*", 0, "ptr*", 0)
-if (@error) Then
-	doDebug("No "&$SSID&" profile exists! Exiting...")
-	doDebug("Adapter= " &  $Enum[0][1])
-	doDebug("wlan_getProfileXML result = " &  $profile)
-	MsgBox(1,"Error","No "&$SSID&" profile exists! Exiting...")
-	Exit
-EndIf
-
-$wifi_eduroam=_Wlan_GetProfile($hClientHandle, $pGUID,$SSID)
-$findProfile = _ArrayFindAll($wifi_eduroam, $SSID)
-if (@error) Then
-	$findProfile=False
-Else
-	$findProfile=True
-EndIf
-
-if ($findProfile) Then
-	if ($DEBUG>0) Then _ArrayDisplay($wifi_eduroam, "Details of profile captured")
-	$wifi_eduroam_all=$wifi_eduroam[0] & "," & $wifi_eduroam[1] & "," & $wifi_eduroam[2] & "," & $wifi_eduroam[3] & "," & $wifi_eduroam[4] & "," & $wifi_eduroam[5] & "," & $wifi_eduroam[6] & "," & $wifi_eduroam[7]
-	;DoDebug($wifi_eduroam_all)
-EndIf
-
-;ConsoleWrite("Call Error: " & @error & @LF)
-;doDebug(_Wlan_GetErrorMessage($a_iCall[0]))
-;ConsoleWrite($a_iCall[5] & @LF)
-UpdateProgress(10);
-If (FileExists("Profile.xml")) Then
-	DoDebug("File exists, Backing up and then deleting...")
-	If (FileExists("Profile-backup.xml")) Then FileDelete("Profile-backup.xml")
-	FileMove("Profile.xml","Profile-backup.xml");
-	FileDelete("Profile.xml")
-EndIf
-UpdateProgress(10);
-$filename = "Profile.xml"
-FileWrite($filename, $profile)
-$wired_interface = $filename
-Else
-;---------------------------------------------------------------------------------------------------WIRED Capture
-GUICtrlSetData ($progressbar1,0)
-UpdateProgress(20);
-$filename = "Profile.xml"
-$wired_interface = ""
-;get description from interface name
-	$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-	$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
-        If IsObj($colItems) Then
-            For $objItem In $colItems
-				UpdateProgress(10);
-				if (StringInStr($interface,$objItem.description)) Then $wired_interface=$objItem.netconnectionid
-			Next
-        Else
-            DoDebug("[setup]No Adapters found!")
-			MsgBox(1,"Error","No Networking adapters found")
+    While 1
+        $msg = GUIGetMsg()
+        ;-----------------------------------------------------------Exit Tool
+        If $msg = $exitb Then
+            exit
+            ExitLoop
         EndIf
-	;capture profile
-	;backup exisiting
-		UpdateProgress(20);
-	If (FileExists($wired_interface&".xml")) Then
-		DoDebug("File exists, Backing up and then deleting...")
-		If (FileExists($wired_interface&"-backup.xml")) Then FileDelete($wired_interface&"-backup.xml")
-		FileMove($wired_interface&".xml",$wired_interface&"-backup.xml");
-		FileDelete($wired_interface&".xml")
-	EndIf
-	UpdateProgress(10);
-	$filename = @ScriptDir
-	$cmd = "netsh lan export profile folder=""" & $filename & """ interface=" & """" & $wired_interface & """"
-	DoDebug("[setup]802.3 command="& $cmd)
-	RunWait($cmd, "", @SW_HIDE)
-	$wired_interface&=".xml"
+        If $msg = $GUI_EVENT_CLOSE Then
+            Exit
+        EndIf
+        ;-----------------------------------------------------------
+        ;If install button clicked
+        if $msg = $installb Then
+            ;-------------------------------------------------------------------------
+            ;select value from drop down menu
+            $interface = GUICtrlRead($combo)
+            doDebug("selected interface = " & $interface)
+            if (StringInStr($interface,"wireless")) Then
+                ;---------------------------------------------------------------------------------------------------WIRELESS Capture
+                GUICtrlSetData ($progressbar1,0)
+                UpdateProgress(10);
+                $hClientHandle = _Wlan_OpenHandle()
+                if @error Then
+                    doDebug("No Wireless Interface Found. Exiting... Error Code = " & @error)
+                    Exit
+                EndIf
+                $Enum = _Wlan_EnumInterfaces($hClientHandle)
+                if @error Then doDebug("No Interface Found")
 
-EndIf
-	GUICtrlSetData ($progressbar1,100)
-	doDebug("Complete. Exported to "&$filename)
-	MsgBox (16, "Complete","The profile has been exported to " & $wired_interface &". Do not forget to rename it to wired/wireless.xml and change the config.ini")
-;-------------------------------------------------------------------------
-; All done... report any errors or anything
+                If (UBound($Enum) == 0) Then
+                    DoDebug("[setup]Enumeration of wlan adapter" & @error)
+					MsgBox(16, "Error", "No Wireless Adapter Found.")
+					Exit
+                EndIf
+                $pGUID = $Enum[0][0]
+                DoDebug("Adapter=" & $Enum[0][1])
+                $profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
+                If (UBound($profiles) == 0) Then
+					DoDebug("[setup]No wireless profiles found")
+					exit;
+				Else
+					DoDebug("found " & UBound($profiles) & "profiles")
+				EndIf
 
-;GUICtrlSetData ($myedit, "Installation Complete!"& @CRLF & "To connect to the SWIS you need to double click the 'uws-vpn' icon on your desktop." )
-  ExitLoop
-  EndIf
+                UpdateProgress(10);
+                $profile=_Wlan_GetProfileXML($hClientHandle, $pGUID, $SSID)
+                ;$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanGetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID,"ptr", 0, "wstr*", 0, "ptr*", 0, "ptr*", 0)
+                if (@error) Then
+                    doDebug("No "&$SSID&" profile exists! Exiting...")
+                    doDebug("Adapter= " &  $Enum[0][1])
+                    doDebug("wlan_getProfileXML result = " &  $profile)
+                    MsgBox(1,"Error","No "&$SSID&" profile exists! Exiting...")
+                    Exit
+                EndIf
 
- Wend
+                $wifi_eduroam=_Wlan_GetProfile($hClientHandle, $pGUID,$SSID)
+                $findProfile = _ArrayFindAll($wifi_eduroam, $SSID)
+                if (@error) Then
+                    $findProfile=False
+                Else
+                    $findProfile=True
+                EndIf
+
+                if ($findProfile) Then
+                    if ($DEBUG>0) Then _ArrayDisplay($wifi_eduroam, "Details of profile captured")
+                    $wifi_eduroam_all=$wifi_eduroam[0] & "," & $wifi_eduroam[1] & "," & $wifi_eduroam[2] & "," & $wifi_eduroam[3] & "," & $wifi_eduroam[4] & "," & $wifi_eduroam[5] & "," & $wifi_eduroam[6] & "," & $wifi_eduroam[7]
+                    ;DoDebug($wifi_eduroam_all)
+                EndIf
+
+                ;ConsoleWrite("Call Error: " & @error & @LF)
+                ;doDebug(_Wlan_GetErrorMessage($a_iCall[0]))
+                ;ConsoleWrite($a_iCall[5] & @LF)
+                UpdateProgress(10);
+                If (FileExists("Profile.xml")) Then
+                    DoDebug("File exists, Backing up and then deleting...")
+                    If (FileExists("Profile-backup.xml")) Then FileDelete("Profile-backup.xml")
+                    FileMove("Profile.xml","Profile-backup.xml");
+                    FileDelete("Profile.xml")
+                EndIf
+                UpdateProgress(10);
+                $filename = "Profile.xml"
+                FileWrite($filename, $profile)
+                $wired_interface = $filename
+            Else
+                ;---------------------------------------------------------------------------------------------------WIRED Capture
+                GUICtrlSetData ($progressbar1,0)
+                UpdateProgress(20);
+                $filename = "Profile.xml"
+                $wired_interface = ""
+                ;get description from interface name
+                $objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
+                $colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
+                If IsObj($colItems) Then
+                    For $objItem In $colItems
+                        UpdateProgress(10);
+                        if (StringInStr($interface,$objItem.description)) Then $wired_interface=$objItem.netconnectionid
+                    Next
+                Else
+                    DoDebug("[setup]No Adapters found!")
+                    MsgBox(1,"Error","No Networking adapters found")
+                EndIf
+                ;capture profile
+                ;backup exisiting
+                UpdateProgress(20);
+                If (FileExists($wired_interface&".xml")) Then
+                    DoDebug("File exists, Backing up and then deleting...")
+                    If (FileExists($wired_interface&"-backup.xml")) Then FileDelete($wired_interface&"-backup.xml")
+                    FileMove($wired_interface&".xml",$wired_interface&"-backup.xml");
+                    FileDelete($wired_interface&".xml")
+                EndIf
+                UpdateProgress(10);
+                $filename = @ScriptDir
+                $cmd = "netsh lan export profile folder=""" & $filename & """ interface=" & """" & $wired_interface & """"
+                DoDebug("[setup]802.3 command="& $cmd)
+                RunWait($cmd, "", @SW_HIDE)
+                $wired_interface&=".xml"
+
+            EndIf
+            GUICtrlSetData ($progressbar1,100)
+            doDebug("Complete. Exported to "&$filename)
+            MsgBox (16, "Complete","The profile has been exported to " & $wired_interface &". Do not forget to rename it to wired/wireless.xml and change the config.ini")
+            ;-------------------------------------------------------------------------
+            ; All done... report any errors or anything
+
+            ;GUICtrlSetData ($myedit, "Installation Complete!"& @CRLF & "To connect to the SWIS you need to double click the 'uws-vpn' icon on your desktop." )
+            ExitLoop
+        EndIf
+    Wend
 Wend
 ;-------------------------------------------------------------------------
 ;End of Program when loop ends
