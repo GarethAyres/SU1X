@@ -248,16 +248,16 @@ While 1
                 ;doDebug(_Wlan_GetErrorMessage($a_iCall[0]))
                 ;ConsoleWrite($a_iCall[5] & @LF)
                 UpdateProgress(10);
-                If (FileExists("Profile.xml")) Then
+                If (FileExists($SSID & ".xml")) Then
                     DoDebug("File exists, Backing up and then deleting...")
-                    If (FileExists("Profile-backup.xml")) Then FileDelete("Profile-backup.xml")
-                    FileMove("Profile.xml","Profile-backup.xml");
-                    FileDelete("Profile.xml")
+                    If (FileExists($SSID & "-backup.xml")) Then FileDelete($SSID & "-backup.xml")
+                    FileMove($SSID & ".xml",$SSID & "-backup.xml");
+                    FileDelete($SSID & ".xml")
                 EndIf
                 UpdateProgress(10);
-                $filename = "Profile.xml"
+                $filename = $SSID & ".xml"
                 FileWrite($filename, $profile)
-                $wired_interface = $filename
+                $wired_interface = $filename ;What's this???
             Else
                 ;---------------------------------------------------------------------------------------------------WIRED Capture
                 GUICtrlSetData ($progressbar1,0)
