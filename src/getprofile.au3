@@ -284,7 +284,7 @@ While 1
                 ;---------------------------------------------------------------------------------------------------WIRELESS Capture
                 GUICtrlSetData ($progressbar1,0)
                 UpdateProgress(10);
-                $profile = CaptureWirelessProfile($interface, $SSID)
+                $profile = CaptureWirelessProfile($SSID)
                 if (@error) Then
                     doDebug("Couldn't capture "&$ssid&" profile")
                 Else                
