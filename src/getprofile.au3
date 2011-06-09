@@ -63,14 +63,15 @@ EndIf
 $VERSION = "V1.2"
 $WZCSVCStarted = 0
 $progress_meter = 0
-$SSID = IniRead("config.ini", "getprofile", "ssid1", "eduroam")
+$SSID1 = IniRead("config.ini", "getprofile", "ssid1", "eduroam")
+$SSID2 = IniRead("config.ini", "getprofile", "ssid2", "")
+$SSID3 = IniRead("config.ini", "getprofile", "ssid3", "")
 $wireless=IniRead("config.ini", "su1x", "wireless", "1")
 $wireless=IniRead("config.ini", "su1x", "wireless", "1")
 $DEBUG=IniRead("config.ini", "su1x", "DEBUG", "0")
 $progressbar1 = ""
 $os = "win7"
 
-$SSID_ARR = StringSplit($SSID, ',')
 
 ; ---------------------------------------------------------------
 ;Functions
@@ -81,6 +82,23 @@ Func DoDebug($text)
 		MsgBox (16, "DEBUG", $text)
 	EndIf
 EndFunc
+
+Func iterateConfig($section)
+	; return every value under a given section, useful for iterating
+	; multiple ssid to remove/add for instance.
+	$content = IniReadSection($CONFIGFILE, $section)
+	If @error Then
+		MsgBox(4096, "", "Error occured iterating the config file")
+	Else
+		$size = UBound($content, 1)
+		Dim $values[$size - 1]
+		For $i = 1 To $size - 1
+			$values[$i - 1] = IniRead($CONFIGFILE, $section, $content[$i][0], "")
+		Next
+		Return $values
+	EndIf
+EndFunc   ;==>iterateConfig
+
 
 ;Checks if a specified service is running.
 ;Returns 1 if running.  Otherwise returns 0.
@@ -121,7 +139,8 @@ Func GetOSVersion()
 EndFunc
 
 ;simple function to save the profile to a file
-Func SaveXMLProfile($filename, $profile)
+Func SaveXMLProfile($name, $profile)
+    $filename = $name &"_"&GetOSVersion()&".xml"
     If (FileExists($filename)) Then
         $backup_filename = $filename & ".backup"
         DoDebug("File exists, Backing up and then deleting...")
@@ -283,28 +302,28 @@ While 1
             if (StringInStr($interface,"wireless")) Then
                 ;---------------------------------------------------------------------------------------------------WIRELESS Capture
                 GUICtrlSetData ($progressbar1,0)
-                ;For $CAPSSID in $SSID_ARR
-                ;    UpdateProgress(10)
-                ;    DoDebug("Capturing "&$SSID)
-                ;    $profile = CaptureWirelessProfile($SSID)
-                ;    if (@error) Then
-                ;        doDebug("Couldn't capture "&$SSID&" profile")
-                ;    Else                
-                ;        UpdateProgress(10);
-                ;        SaveXMLProfile($SSID & ".xml", $profile)
-                ;        UpdateProgress(10);
-                ;    EndIf
-                ;Next
-                UpdateProgress(10)
-                DoDebug("Capturing "&$SSID)
-                $profile = CaptureWirelessProfile($SSID)
-                if (@error) Then
-                    doDebug("Couldn't capture "&$SSID&" profile")
-                Else                
-                    UpdateProgress(10);
-                    SaveXMLProfile($SSID & ".xml", $profile)
-                    UpdateProgress(10);
-                EndIf
+                For $CAPSSID in IterateConfig("getprofile")
+                    UpdateProgress(10)
+                    DoDebug("Capturing "&$CAPSSID)
+                    $profile = CaptureWirelessProfile($CAPSSID)
+                    if (@error) Then
+                        doDebug("Couldn't capture "&$CAPSSID&" profile")
+                    Else                
+                        UpdateProgress(10);
+                        SaveXMLProfile($CAPSSID & ".xml", $profile)
+                        UpdateProgress(10);
+                    EndIf
+                Next
+                ;UpdateProgress(10)
+                ;DoDebug("Capturing "&$SSID)
+                ;$profile = CaptureWirelessProfile($SSID)
+                ;if (@error) Then
+                ;    doDebug("Couldn't capture "&$SSID&" profile")
+                ;Else                
+                ;    UpdateProgress(10);
+                ;    SaveXMLProfile($SSID, $profile)
+                ;    UpdateProgress(10);
+                ;EndIf
                 ;$wifi_eduroam=_Wlan_GetProfile($hClientHandle, $pGUID,$SSID)
                 ;$findProfile = _ArrayFindAll($wifi_eduroam, $SSID)
                 ;if (@error) Then
