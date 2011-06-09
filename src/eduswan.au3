@@ -12,6 +12,7 @@
 #AutoIt3Wrapper_Au3Check_Stop_OnWarning=y
 #AutoIt3Wrapper_Run_Tidy=y
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_Run_Tidy=y
 
 ;-------------------------------------------------------------------------
 ; AutoIt script to automate the creation of Wireless / Wired Configuration for Eduroam
@@ -735,8 +736,84 @@ Func alreadyRunning()
 EndFunc   ;==>alreadyRunning
 
 ;-------------------------------------------------------------------------
+; Start of GUI code
+DoDebug("***Starting SU1X***")
+alreadyRunning()
+GUICreate($title, 294, 310)
+GUISetBkColor(0xffffff) ;---------------------------------white
+;GUICtrlCreateLabel("Select Tab Below for Options:", 10, 65)
+$n = GUICtrlCreatePic($BANNER, 0, 0, 294, 54) ;--------pic
+if ($showup > 0) Then
+	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 70, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
+	GUICtrlCreateLabel("Username:", 10, 145, 60, 20)
+	GUICtrlCreateLabel("Password:", 165, 145, 60, 20)
+	$userbutton = GUICtrlCreateInput($username, 10, 160, 150, 20)
+	$passbutton = GUICtrlCreateInput("password", 165, 160, 120, 20, BitOR($GUI_SS_DEFAULT_INPUT, $ES_PASSWORD))
+	;$passbutton=GUICtrlCreateInput ("password",165,160,120)
+	GUICtrlSendMsg($passbutton, 0x00CC, 42, 0)
+	;GUICtrlSetData($passbutton, $GUI_FOCUS)
+	if ($showuptick > 0) Then
+		$showPass = GUICtrlCreateCheckbox("Show Password", 170, 185, 100, 20)
+	EndIf
+Else
+	$showuptick = 0
+	;showuptick must be 0 if showup 0, force set to avoid bad config
+	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 130, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
+EndIf
+GUICtrlCreateLabel("Progress:", 15, 210, 48, 20)
+$progressbar1 = GUICtrlCreateProgress(65, 210, 200, 20)
+$exitb = GUICtrlCreateButton("Exit", 230, 270, 50)
+;-------------------------------------------------------------------------
+;TABS
+$tab = GUICtrlCreateTab(1, 240, 292, 70)
+;only show this tab if argument set by scheduled task
+If (StringInStr($argument1, "auth") > 0) Then
+	;-------------------------Connect Tab
+	$tab0 = GUICtrlCreateTabItem("Connect")
+	$tryconnect = GUICtrlCreateButton("Reconnect to " & $SSID, 60, 270, 150)
+	;GUICtrlSetState(-1, $GUI_SHOW); will be display first
+EndIf
+;--------------------------Setup Tab
+$tab1 = GUICtrlCreateTabItem("Setup")
+$installb = GUICtrlCreateButton("Start Setup", 10, 270, 80)
+$remove_wifi = GUICtrlCreateButton("Remove " & $SSID, 100, 270, 100)
+;--------------------------Printing Tab
+$tab2 = GUICtrlCreateTabItem("Printing")
+$print = GUICtrlCreateButton("Setup Printer", 10, 270, 80)
+$remove_printer = GUICtrlCreateButton("Remove Printer", 100, 270, 90)
+;--------------------------Support Tab
+$tab3 = GUICtrlCreateTabItem("Help")
+$support = GUICtrlCreateButton("Start Checks", 10, 270, 80)
+;$reset = GUICtrlCreateButton("IP Reset", 100, 270, 80)
+$gethelp = GUICtrlCreateButton("Get Help", 100, 270, 80)
+;--------------------------
+$tab = GUICtrlCreateTabItem("")
+;--------------------------End of Tabs
+If ($show_printing == 0) Then GUICtrlDelete($tab2)
+If ($show_support == 0) Then GUICtrlDelete($tab3)
+;$unInstallb = GUICtrlCreateButton("Remove", 80, 280, 50)
+;$backupb = GUICtrlCreateButton("Check", 160,280,50)
+;-----------------------------------------------------------
+;doHint()
+GUISetState(@SW_SHOW)
+;-----------------------------------------------------------
+;DUMP TO FILE FOR DEBUG
+If ($DEBUG > 0) Then
+	$dump_to_file = 1
+EndIf
+if ($dump_to_file == 1) Then
+	$file = FileOpen("su1x-dump-" & @YEAR & @MON & @MDAY & @HOUR & @MIN & @SEC & ".txt", 1)
+	; Check if file opened for reading OK
+	If ($file == -1) Then
+		DoDebug("Unable to open debug dump file.:" & $file)
+	EndIf
+EndIf
+
+;-------------------------------------------------------------------------------
+; FUNCTIONS FOR INSTALL PROCEDURES
 ; Unified functions for the two install loops. All lines were
 ; checked (diff) for deviations before merging
+;-------------------------------------------------------------------------------
 
 Func enableNAP($id)
 	DoDebug("[setup]Enabling NAP")
@@ -860,87 +937,36 @@ Func removeProfiles($hClientHandle, $pGUID)
 	EndIf
 EndFunc   ;==>removeProfiles
 
-
-;-------------------------------------------------------------------------
-; Start of GUI code
-DoDebug("***Starting SU1X***")
-alreadyRunning()
-GUICreate($title, 294, 310)
-GUISetBkColor(0xffffff) ;---------------------------------white
-;GUICtrlCreateLabel("Select Tab Below for Options:", 10, 65)
-$n = GUICtrlCreatePic($BANNER, 0, 0, 294, 54) ;--------pic
-if ($showup > 0) Then
-	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 70, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
-	GUICtrlCreateLabel("Username:", 10, 145, 60, 20)
-	GUICtrlCreateLabel("Password:", 165, 145, 60, 20)
-	$userbutton = GUICtrlCreateInput($username, 10, 160, 150, 20)
-	$passbutton = GUICtrlCreateInput("password", 165, 160, 120, 20, BitOR($GUI_SS_DEFAULT_INPUT, $ES_PASSWORD))
-	;$passbutton=GUICtrlCreateInput ("password",165,160,120)
-	GUICtrlSendMsg($passbutton, 0x00CC, 42, 0)
-	;GUICtrlSetData($passbutton, $GUI_FOCUS)
-	if ($showuptick > 0) Then
-		$showPass = GUICtrlCreateCheckbox("Show Password", 170, 185, 100, 20)
+Func checkAdminRights()
+	If 0 = IsAdmin() Then
+		MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
+		Exit
 	EndIf
-Else
-	$showuptick = 0
-	;showuptick must be 0 if showup 0, force set to avoid bad config
-	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 130, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
-EndIf
-GUICtrlCreateLabel("Progress:", 15, 210, 48, 20)
-$progressbar1 = GUICtrlCreateProgress(65, 210, 200, 20)
-$exitb = GUICtrlCreateButton("Exit", 230, 270, 50)
-;-------------------------------------------------------------------------
-;TABS
-$tab = GUICtrlCreateTab(1, 240, 292, 70)
-;only show this tab if argument set by scheduled task
-If (StringInStr($argument1, "auth") > 0) Then
-	;-------------------------Connect Tab
-	$tab0 = GUICtrlCreateTabItem("Connect")
-	$tryconnect = GUICtrlCreateButton("Reconnect to " & $SSID, 60, 270, 150)
-	;GUICtrlSetState(-1, $GUI_SHOW); will be display first
-EndIf
-;--------------------------Setup Tab
-$tab1 = GUICtrlCreateTabItem("Setup")
-$installb = GUICtrlCreateButton("Start Setup", 10, 270, 80)
-$remove_wifi = GUICtrlCreateButton("Remove " & $SSID, 100, 270, 100)
-;--------------------------Printing Tab
-$tab2 = GUICtrlCreateTabItem("Printing")
-$print = GUICtrlCreateButton("Setup Printer", 10, 270, 80)
-$remove_printer = GUICtrlCreateButton("Remove Printer", 100, 270, 90)
-;--------------------------Support Tab
-$tab3 = GUICtrlCreateTabItem("Help")
-$support = GUICtrlCreateButton("Start Checks", 10, 270, 80)
-;$reset = GUICtrlCreateButton("IP Reset", 100, 270, 80)
-$gethelp = GUICtrlCreateButton("Get Help", 100, 270, 80)
-;--------------------------
-$tab = GUICtrlCreateTabItem("")
-;--------------------------End of Tabs
-If ($show_printing == 0) Then GUICtrlDelete($tab2)
-If ($show_support == 0) Then GUICtrlDelete($tab3)
-;$unInstallb = GUICtrlCreateButton("Remove", 80, 280, 50)
-;$backupb = GUICtrlCreateButton("Check", 160,280,50)
-;-----------------------------------------------------------
-;doHint()
-GUISetState(@SW_SHOW)
-;-----------------------------------------------------------
-;DUMP TO FILE FOR DEBUG
-If ($DEBUG > 0) Then
-	$dump_to_file = 1
-EndIf
-if ($dump_to_file == 1) Then
-	$file = FileOpen("su1x-dump-" & @YEAR & @MON & @MDAY & @HOUR & @MIN & @SEC & ".txt", 1)
-	; Check if file opened for reading OK
-	If ($file == -1) Then
-		DoDebug("Unable to open debug dump file.:" & $file)
+EndFunc   ;==>checkAdminRights
+
+Func setWirelessProfile($SSID, $os, $hClientHandle, $pGUID)
+	UpdateProgress(10);
+
+	; try to load xml from filename = "{ssidname}_{os}.xml"
+	$ssidxml = $SSID & "_" & $os & ".xml"
+
+	If FileExists($ssidxml) Then
+		$XMLProfile = FileRead($ssidxml)
+		UpdateOutput("Using ssid settings from " & $ssidxml)
+	Else
+		; load a default file.. not sure which one -A
+		UpdateOutput("Using default ssid settings")
+		$XMLProfile = FileRead("wireless-wpa.xml")
 	EndIf
-EndIf
+	$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
+	DoDebug("[setup]setProfile return code (profile1" & $xmlfile & ") =" & $a_iCall[0])
+EndFunc   ;==>setWirelessProfile
 
 
 
-
-;-----------------------------------------------------------
-;START MAIN LOOP
-;-----------------------------------------------------------
+;-------------------------------------------------------------------------------
+; START MAIN LOOP
+;-------------------------------------------------------------------------------
 While 1
 	;two while loops so exitlooop can be used to escape button functions
 	While 1
@@ -1024,10 +1050,7 @@ While 1
 			If (StringInStr(@OSVersion, "7", 0)) Then
 				$os = "win7"
 				#RequireAdmin
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
+				checkAdminRights()
 			EndIf
 
 			If (StringInStr(@OSVersion, "XP", 0)) Then
@@ -1054,6 +1077,7 @@ While 1
 					ExitLoop
 				EndIf
 			EndIf
+
 
 			;**************************************************************************************************************
 
@@ -1114,12 +1138,7 @@ While 1
 				EndIf
 
 				UpdateProgress(10);
-
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
-
+				checkAdminRights()
 
 				if ($wireless == 1) Then
 
@@ -1364,15 +1383,12 @@ While 1
 				EndIf
 
 
-				;END OF XP CODE**********************************************************************************************************
+				;END OF XP CODE*************************************************
 			Else
-				;VISTA / 7 CODE**************************************************************************************************************
+				;VISTA / 7 CODE*************************************************
 				UpdateOutput("Detected " & $os & "/7")
 				#RequireAdmin
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
+				checkAdminRights()
 
 				If ($wireless == 1) Then
 
@@ -1384,43 +1400,7 @@ While 1
 					UpdateOutput("Configuring Wireless Profile...")
 					UpdateProgress(10);
 
-					If ($win7 == 1 And FileExists($xmlfile7)) Then
-						If (FileExists($xmlfile7) == 0) Then
-							MsgBox(16, "Error", "Config file win7 missing.")
-							Exit
-						EndIf
-						$XMLProfile = FileRead($xmlfile7)
-						if ($tryadditional == 1) Then
-							If (FileExists($xmlfile7_wpa) == 0) Then
-								MsgBox(16, "Error", "Config file win7-wpa missing.")
-								Exit
-							EndIf
-							$XMLProfile2 = FileRead($xmlfile7_wpa)
-						EndIf
-					Else
-						If ($tryadditional == 1) Then
-							If (FileExists($xmlfile_wpa) == 0) Then
-								MsgBox(16, "Error", "Config file2 missing.")
-								Exit
-							EndIf
-						EndIf
-						$XMLProfile = FileRead($xmlfile)
-						if ($tryadditional == 1) Then
-							$XMLProfile2 = FileRead($xmlfile_wpa)
-						EndIf
-					EndIf
-
 				EndIf
-
-				;multiple profile
-				If ($tryadditional_profile == 1) Then
-					If (FileExists($xmlfile_additional) == 0) Then
-						MsgBox(16, "Error", "Wireless Config file [additional] missing. ")
-						Exit
-					EndIf
-					$XMLProfile3 = FileRead($xmlfile_additional)
-				EndIf
-
 
 				if ($wired == 1) Then
 
@@ -1447,7 +1427,7 @@ While 1
 					UpdateOutput("Installed certificate")
 				EndIf
 
-				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
+				;------------------------------------------------WIRELESS CONFIG
 				if ($wireless == 1) Then
 					if ($run_already < 1) Then
 						$hClientHandle = _Wlan_OpenHandle()
@@ -1478,34 +1458,22 @@ While 1
 						removeProfiles($hClientHandle, $pGUID)
 					EndIf
 
-					;SET THE PROFILE
-					UpdateProgress(10);
-					$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
-					;$a_iCall =  _Wlan_SetProfileXML($hClientHandle, $pGUID, $XMLProfile)
-					DoDebug("[setup]setProfile return code (profile1" & $xmlfile & ") =" & $a_iCall[0])
-					if ($a_iCall[0] > 0) Then
-						if ($tryadditional == 0) Then
-							UpdateOutput("Error: Return code invalid (WPA2 not supportted?)")
-							UpdateOutput("Error: Exiting application")
-							Exit
-						EndIf
-					EndIf
-					;Check return code from setting profile and set additional profile
-					if ($tryadditional == 1) Then
-						DoDebug("[setup]Trying additional profile if profile 1 failed...")
-						if ($a_iCall[0] == 1169) Then
-							$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile2, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
-							DoDebug("[setup]setProfile return code (profile2" & $xmlfile_wpa & ") =")
-							DoDebug("[setup]set profile=" & $a_iCall[0])
-						EndIf
-					EndIf
-					;configure additional profile
-					if ($tryadditional_profile == 1) Then
-						DoDebug("[setup]Trying additional [multiple] profile.")
-						$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile3, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
-						DoDebug("[setup]setProfile return code (profile3" & $xmlfile_additional & ") =" & $a_iCall[0])
-						SetPriority($hClientHandle, $pGUID, $SSID_Additional, 1)
-					EndIf
+
+					;-------------------------------------------SETTING_PROFILES
+
+					$installprofiles = IterateConfig("getprofile")
+
+					; install wireless profiles for all the SSID's listed in
+					; the config file under the [getprofile] section.
+					For $i = 0 To UBound($installprofiles) - 1;
+						;debug
+						MsgBox(4096, "ssid to install", $installprofiles[$i])
+						setWirelessProfile($installprofiles[$i], $os, $hClientHandle, $pGUID)
+
+
+						; set eap creds
+						; set priority
+					Next
 
 					;*****************************SET  profile EAP credentials
 					if ($showup > 0) Then
@@ -1521,13 +1489,6 @@ While 1
 							UpdateOutput("User/Pass not set")
 						EndIf
 						DoDebug("[reauth]Set Credentials=" & $credentials[2] & $credentials[3] & $setCredentials)
-						if ($tryadditional_profile == 1) Then
-							$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID_Additional, $credentials)
-							If @error Then
-								DoDebug("[setup]credential additional error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
-							EndIf
-							DoDebug("[setup]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID_Additional & $credentials[2])
-						EndIf
 					EndIf
 
 					;set priority of new profile
@@ -1665,19 +1626,13 @@ While 1
 			If (StringInStr(@OSVersion, "VISTA", 0)) Then
 				$os = "vista"
 				#RequireAdmin
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
+				checkAdminRights()
 			EndIf
 
 			If (StringInStr(@OSVersion, "7", 0)) Then
 				$os = "win7"
 				#RequireAdmin
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
+				checkAdminRights()
 			EndIf
 
 			If (StringInStr(@OSVersion, "XP", 0)) Then
@@ -2086,10 +2041,7 @@ While 1
 		;***************************************************************************************REMOVE EDUROAM
 		If $msg == $remove_wifi Then
 			#RequireAdmin
-			If 0 = IsAdmin() Then
-				MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-				Exit
-			EndIf
+			checkAdminRights()
 
 			;if wireless
 			if ($wireless == 1) Then
@@ -2180,10 +2132,7 @@ While 1
 		;***************************************************************************************ADD PRINTER
 		If $msg == $print Then
 			#RequireAdmin
-			If 0 = IsAdmin() Then
-				MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-				Exit
-			EndIf
+			checkAdminRights()
 
 			Dim $printer_model
 
@@ -2220,10 +2169,7 @@ While 1
 		;***************************************************************************************REMOVE PRINTER
 		If $msg == $remove_printer Then
 			#RequireAdmin
-			If 0 = IsAdmin() Then
-				MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-				Exit
-			EndIf
+			checkAdminRights()
 
 			$progress_meter = 0;
 			UpdateOutput("***Removing Printer***")
@@ -2244,10 +2190,7 @@ While 1
 		If $msg == $tryconnect Then
 			DoDebug("***TRY TO REAUTH***")
 			#RequireAdmin
-			If 0 = IsAdmin() Then
-				MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-				Exit
-			EndIf
+			checkAdminRights()
 			$progress_meter = 0;
 			UpdateProgress(0);
 			UpdateOutput("***Trying to Connect to:" & $SSID & "***")
@@ -2503,6 +2446,7 @@ While 1
 	WEnd
 
 WEnd
+
 ;-------------------------------------------------------------------------
 ;End of Program when loop ends
 ;-------------------------------------------------------------------------
