@@ -70,6 +70,7 @@ $DEBUG=IniRead("config.ini", "su1x", "DEBUG", "0")
 $progressbar1 = ""
 $os = "win7"
 
+$SSID_ARR = StringSplit($SSID, ',')
 
 ; ---------------------------------------------------------------
 ;Functions
@@ -130,7 +131,7 @@ Func SaveXMLProfile($filename, $profile)
     EndIf
     FileWrite($filename, $profile)
 EndFunc
-
+;simple function to dump the wired profile to a file
 Func DumpWiredXMLProfile($interface)
     $filename = $interface&".xml"
     If (FileExists($filename)) Then
@@ -143,6 +144,51 @@ Func DumpWiredXMLProfile($interface)
     $cmd = "netsh lan export profile folder=""" & @ScriptDir & """ interface=" & """" & $interface & """"
     DoDebug("[setup]802.3 command="& $cmd)
     RunWait($cmd, "", @SW_HIDE)
+EndFunc
+
+Func CaptureWirelessProfile($ssid)
+    $hClientHandle = _Wlan_OpenHandle()
+    if @error Then
+        doDebug("No Wireless Interface Found. Exiting... Error Code = " & @error)
+        SetError(1)
+        Return
+    EndIf
+    $Enum = _Wlan_EnumInterfaces($hClientHandle)
+    if @error Then 
+        doDebug("No Interface Found")
+        SetError(1)
+        Return
+    EndIf
+    
+    If (UBound($Enum) == 0) Then
+        DoDebug("[setup]Enumeration of wlan adapter" & @error)
+        MsgBox(16, "Error", "No Wireless Adapter Found.")
+        SetError(1)
+        Return
+    EndIf
+    $pGUID = $Enum[0][0]
+    DoDebug("Adapter=" & $Enum[0][1])
+    ;why getting all profiles??
+    $profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
+    If (UBound($profiles) == 0) Then
+        DoDebug("[setup]No wireless profiles found")
+        SetError(1)
+        Return
+    Else
+        DoDebug("found " & UBound($profiles) & "profiles")
+    EndIf
+
+    $profile=_Wlan_GetProfileXML($hClientHandle, $pGUID, $ssid)
+    ;$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanGetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID,"ptr", 0, "wstr*", 0, "ptr*", 0, "ptr*", 0)
+    if (@error) Then
+        doDebug("No "&$ssid&" profile exists! Exiting...")
+        doDebug("Adapter= " &  $Enum[0][1])
+        doDebug("wlan_getProfileXML result = " &  $profile)
+        MsgBox(1,"Error","No "&$ssid&" profile exists! Exiting...")
+        SetError(1)
+        Return
+    EndIf
+    return $profile
 EndFunc
 ;-------------------------------------------------------------------------
 ; Start of GUI code
@@ -238,61 +284,32 @@ While 1
                 ;---------------------------------------------------------------------------------------------------WIRELESS Capture
                 GUICtrlSetData ($progressbar1,0)
                 UpdateProgress(10);
-                $hClientHandle = _Wlan_OpenHandle()
-                if @error Then
-                    doDebug("No Wireless Interface Found. Exiting... Error Code = " & @error)
-                    Exit
-                EndIf
-                $Enum = _Wlan_EnumInterfaces($hClientHandle)
-                if @error Then doDebug("No Interface Found")
-
-                If (UBound($Enum) == 0) Then
-                    DoDebug("[setup]Enumeration of wlan adapter" & @error)
-					MsgBox(16, "Error", "No Wireless Adapter Found.")
-					Exit
-                EndIf
-                $pGUID = $Enum[0][0]
-                DoDebug("Adapter=" & $Enum[0][1])
-                $profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
-                If (UBound($profiles) == 0) Then
-					DoDebug("[setup]No wireless profiles found")
-					exit;
-				Else
-					DoDebug("found " & UBound($profiles) & "profiles")
-				EndIf
-
-                UpdateProgress(10);
-                $profile=_Wlan_GetProfileXML($hClientHandle, $pGUID, $SSID)
-                ;$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanGetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID,"ptr", 0, "wstr*", 0, "ptr*", 0, "ptr*", 0)
+                $profile = CaptureWirelessProfile($interface, $SSID)
                 if (@error) Then
-                    doDebug("No "&$SSID&" profile exists! Exiting...")
-                    doDebug("Adapter= " &  $Enum[0][1])
-                    doDebug("wlan_getProfileXML result = " &  $profile)
-                    MsgBox(1,"Error","No "&$SSID&" profile exists! Exiting...")
-                    Exit
+                    doDebug("Couldn't capture "&$ssid&" profile")
+                Else                
+                    UpdateProgress(10);
+                    SaveXMLProfile($SSID & ".xml", $profile)
+                    UpdateProgress(10);
                 EndIf
+                $wired_interface = $filename
+                ;$wifi_eduroam=_Wlan_GetProfile($hClientHandle, $pGUID,$SSID)
+                ;$findProfile = _ArrayFindAll($wifi_eduroam, $SSID)
+                ;if (@error) Then
+                ;    $findProfile=False
+                ;Else
+                ;    $findProfile=True
+                ;EndIf
 
-                $wifi_eduroam=_Wlan_GetProfile($hClientHandle, $pGUID,$SSID)
-                $findProfile = _ArrayFindAll($wifi_eduroam, $SSID)
-                if (@error) Then
-                    $findProfile=False
-                Else
-                    $findProfile=True
-                EndIf
-
-                if ($findProfile) Then
-                    if ($DEBUG>0) Then _ArrayDisplay($wifi_eduroam, "Details of profile captured")
-                    $wifi_eduroam_all=$wifi_eduroam[0] & "," & $wifi_eduroam[1] & "," & $wifi_eduroam[2] & "," & $wifi_eduroam[3] & "," & $wifi_eduroam[4] & "," & $wifi_eduroam[5] & "," & $wifi_eduroam[6] & "," & $wifi_eduroam[7]
-                    ;DoDebug($wifi_eduroam_all)
-                EndIf
+                ;if ($findProfile) Then
+                ;    if ($DEBUG>0) Then _ArrayDisplay($wifi_eduroam, "Details of profile captured")
+                ;    $wifi_eduroam_all=$wifi_eduroam[0] & "," & $wifi_eduroam[1] & "," & $wifi_eduroam[2] & "," & $wifi_eduroam[3] & "," & $wifi_eduroam[4] & "," & $wifi_eduroam[5] & "," & $wifi_eduroam[6] & "," & $wifi_eduroam[7]
+                ;    ;DoDebug($wifi_eduroam_all)
+                ;EndIf
 
                 ;ConsoleWrite("Call Error: " & @error & @LF)
                 ;doDebug(_Wlan_GetErrorMessage($a_iCall[0]))
                 ;ConsoleWrite($a_iCall[5] & @LF)
-                UpdateProgress(10);
-                SaveXMLProfile($SSID & ".xml", $profile)
-                UpdateProgress(10);
-                $wired_interface = $filename ;What's this???
             Else
                 ;---------------------------------------------------------------------------------------------------WIRED Capture
                 GUICtrlSetData ($progressbar1,0)
@@ -316,11 +333,10 @@ While 1
                 UpdateProgress(20);
                 DumpWiredXMLProfile($wired_interface)
                 UpdateProgress(10);
-                $wired_interface&=".xml"
             EndIf
             GUICtrlSetData ($progressbar1,100)
-            doDebug("Complete. Exported to "&$filename)
-            MsgBox (16, "Complete","The profile has been exported to " & $wired_interface &". Do not forget to rename it to wired/wireless.xml and change the config.ini")
+            doDebug("Complete. Exported to "&$wired_interface&".xml")
+            MsgBox (16, "Complete","The profile has been exported to " & $wired_interface &".xml. Do not forget to point your config.ini to the right xml file")
             ;-------------------------------------------------------------------------
             ; All done... report any errors or anything
 
