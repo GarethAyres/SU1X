@@ -9,7 +9,7 @@
   !define MUI_VERSION ""
   !define MUI_BRANDINGTEXT "Eduroam @ Swansea"
   !define MUI_HEADERIMAGE
-  !define MUI_HEADERIMAGE_BITMAP "images\jrs-header.jpg"
+  !define MUI_HEADERIMAGE_BITMAP "images\jrs-header.bmp"
   CRCCheck On
 
 ;--------------------------------
@@ -30,7 +30,6 @@
 ;--------------------------------
 ;Folder selection page
   InstallDir "$PROGRAMFILES\${MUI_PRODUCT}"
-
 
 ;--------------------------------
 ;Pages
@@ -70,13 +69,14 @@ Section "Eduroam @ Swansea" install
   File "swansea.ico"
   File "wireless.xml"
   File "wireless-wpa2.xml"
+  File "CamfordCA.der"
   SetOutPath "$INSTDIR\images"
   File "images\lis-header.jpg"
   File "images\bubble-connected-xp.jpg"
   File "images\connected-7.jpg"
   File "images\connected-vista.jpg"
   File "images\jrs-header.jpg"
-
+  File "images\bubble-vista.jpg"
 
 ;create desktop shortcut
   CreateShortCut "$DESKTOP\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" "$INSTDIR\${MUI_ICON}" ""
