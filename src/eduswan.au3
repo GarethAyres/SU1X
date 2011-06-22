@@ -102,7 +102,7 @@
 ;-------------------------------------------------------------------------
 ; Global variables and stuff
 
-$VERSION = "V1.91"
+$VERSION = "V2.0.1"
 
 ;Check for config File
 FileChangeDir(@ScriptDir)

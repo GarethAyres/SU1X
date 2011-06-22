@@ -24,16 +24,14 @@ Features now include:
 There are two exe's that make up this package:
 
 1. su1x-setup.exe
-This exe sets up Windows XP, Vista and Win7 clients for use on a wireless network as defined in the XML file.
-The config.ini file defines the location of the XML files.
+This exe sets up Windows XP, Vista and Win7 clients for use on a wireless network as defined in the XML files.
+The config.ini file defines the location of the XML files along with other settings to customise the tool to your sites needs.
 Read the config.ini and check the settings, its all self explanatory.
 
 2. getprofile.exe
 This file is needed to create the XML file containing the wireless configuration information.
-Manually set up a wireless computer for use on your wireless network, make sure the ssid value in the config.ini 
-is correct (eduroam by default) and then run the getprofile tool. This will then save a xml file with the 
-configuration information in it called Profile.xml. You will then need to make sure the xmlfile value in 
-config.ini points to this file. You can then place it in the bin folder and package and distribute it.
+Manually set up a computer for use on your wireless network with the wireless profiles you want to deploy to users configured on it. Run the getprofile tool and select the wireless adapter you want to capture profiles from. All profiles found on that adapter will then be saved to file names that contain the profile name, OS and profile priority. You will then need to make sure the xmlfile values in config.ini points to the appropriate files. After customising the config.ini for your site, you can then package and distribute su1x.
+
 
 ***************************
 Deployment
