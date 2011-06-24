@@ -280,6 +280,7 @@ Func DoDebug($text)
 	EndIf
 EndFunc   ;==>DoDebug
 
+;Write text to debug file
 Func DoDump($text)
 	BlockInput(0)
 	SplashOff()
@@ -477,7 +478,7 @@ Func doHint()
 		If $msg2 == $finish Then ExitLoop
 	WEnd
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>doHint
+EndFunc   ;==>DoHint
 
 ;Problem submission window
 Func doGetHelpInfo()
@@ -492,7 +493,7 @@ Func doGetHelpInfo()
 		If $msg2 == $finish Then ExitLoop
 	WEnd
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>doGetHelpInfo
+EndFunc   ;==>DoGetHelpInfo
 
 
 ;Checks if a specified service is running.
@@ -665,7 +666,7 @@ Func setScheduleTask()
 		DoDebug("Scheduled Task:" & $st_result)
 		;schtasks.exe /create /tn "su1x-auth-start-tool" /xml "f:\eduroam tool\event triggers\su1x-auth-start-orig.xml"
 	EndIf
-EndFunc   ;==>setScheduleTask
+EndFunc   ;==>SetScheduleTask
 
 Func alreadyRunning()
 	;kill windows sup gui first
@@ -734,7 +735,7 @@ Func alreadyRunning()
 		EndIf
 	EndIf
 
-EndFunc   ;==>alreadyRunning
+EndFunc   ;==>AlreadyRunning
 
 
 
