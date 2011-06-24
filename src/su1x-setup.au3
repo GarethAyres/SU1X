@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.4
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.5
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -404,6 +404,36 @@ Func GetMac($adapterType)
 	;Return the user readble MAC address
 	Return $mac
 EndFunc   ;==>GetMac
+
+;Remove any ssids as specified by config file
+Func RemoveSSIDs($hClientHandle, $pGUID)
+	;Check for profiles to remove
+	if ($removessid > 0) Then
+		DoDebug("[setup]Removing SSID")
+		$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
+		If (UBound($profiles) == 0) Then
+			DoDebug("[setup]No wireless profiles to remove found")
+		Else
+			For $ssidremove In $profiles
+				if (StringCompare($ssidremove, $SSID1, 0) == 0) Then
+					RemoveSSID($hClientHandle, $pGUID, $ssidremove)
+					UpdateOutput("Removed SSID:")
+					UpdateOutput($ssidremove)
+				EndIf
+				if (StringCompare($ssidremove, $SSID2, 0) == 0) Then
+					RemoveSSID($hClientHandle, $pGUID, $ssidremove)
+					UpdateOutput("Removed SSID:")
+					UpdateOutput($ssidremove)
+				EndIf
+				if (StringCompare($ssidremove, $SSID3, 0) == 0) Then
+					RemoveSSID($hClientHandle, $pGUID, $ssidremove)
+					UpdateOutput("Removed SSID:")
+					UpdateOutput($ssidremove)
+				EndIf
+			Next
+		EndIf
+	EndIf
+EndFunc   ;==>RemoveSSIDs
 
 Func Fallback_Connect()
 	;connect to fallback network for support funcs to work
@@ -1136,35 +1166,7 @@ While 1
 					DoDebug("[setup]Adapter=" & $Enum[0][1])
 
 					;Check for profiles to remove
-					if ($removessid > 0) Then
-						DoDebug("[setup]Removing SSID" & $SSID1)
-						$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
-						$doremove = 1
-						If (UBound($profiles) == 0) Then
-							DoDebug("[setup]No wireless profiles to remove found")
-							$doremove = 0
-						EndIf
-						If ($doremove == 1) Then
-							For $ssidremove In $profiles
-								if (StringCompare($ssidremove, $SSID1, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-								if (StringCompare($ssidremove, $SSID2, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-								if (StringCompare($ssidremove, $SSID3, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-							Next
-						EndIf
-					EndIf
-
+					if ($removessid > 0) Then RemoveSSIDs($hClientHandle, $pGUID)
 					;SET THE PROFILE
 					UpdateProgress(10);
 					$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "dword", 0, "wstr", $XMLProfile, "ptr", 0, "int", 1, "ptr", 0, "dword*", 0)
@@ -1391,16 +1393,16 @@ While 1
 						EndIf
 					EndIf
 
+					;multiple profile
+					If ($tryadditional_profile == 1) Then
+						If (FileExists($xmlfile_additional) == 0) Then
+							MsgBox(16, "Error", "Wireless Config file [additional] missing. ")
+							Exit
+						EndIf
+						$XMLProfile3 = FileRead($xmlfile_additional)
+					EndIf
 				EndIf
 
-				;multiple profile
-				If ($tryadditional_profile == 1) Then
-					If (FileExists($xmlfile_additional) == 0) Then
-						MsgBox(16, "Error", "Wireless Config file [additional] missing. ")
-						Exit
-					EndIf
-					$XMLProfile3 = FileRead($xmlfile_additional)
-				EndIf
 
 				;Certificate install
 				If ($use_cert == 1) Then SetCert()
@@ -1431,34 +1433,7 @@ While 1
 
 					;updateoutput($hClientHandle & "," & $Enum[0][1] & "," &$pGUID)
 					;Check for profiles to remove
-					if ($removessid > 0) Then
-						DoDebug("[setup]Removing SSID")
-						$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
-						$doremove = 1
-						If (UBound($profiles) == 0) Then
-							DoDebug("[setup]No wireless profiles to remove found")
-							$doremove = 0
-						EndIf
-						If ($doremove == 1) Then
-							For $ssidremove In $profiles
-								if (StringCompare($ssidremove, $SSID1, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-								if (StringCompare($ssidremove, $SSID2, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-								if (StringCompare($ssidremove, $SSID3, 0) == 0) Then
-									RemoveSSID($hClientHandle, $pGUID, $ssidremove)
-									UpdateOutput("Removed SSID:")
-									UpdateOutput($ssidremove)
-								EndIf
-							Next
-						EndIf
-					EndIf
+					if ($removessid > 0) Then RemoveSSIDs($hClientHandle, $pGUID)
 
 					;SET THE PROFILE
 					UpdateProgress(10);
