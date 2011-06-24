@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.3
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.4
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -295,9 +295,67 @@ Func DoDump($text)
 EndFunc   ;==>DoDump
 
 ;Function to configure a wireless adapter
-Func ConfigureWired()
+Func ConfigWired1x()
+	;Check if the DOT1XSVC (Wired LAN Auto Config) Service is running.  If not start it.
+	If IsServiceRunning("DOT3SVC") == 0 Then
+		DoDebug("[setup]DOT3SVC not running")
+		;Set Wireless Zero Configuration Service to run automatically
+		Run("sc config DOT3SVC start= auto", "", @SW_HIDE)
+		;Start the Wireless Zero Configuration Service
+		RunWait("net start DOT3SVC", "", @SW_HIDE)
+		UpdateOutput("******Wired Dot1x Service Started")
+		UpdateProgress(5);
+	Else
+		DoDebug("[setup]DOT3SVC Already Running")
+	EndIf
 
-EndFunc   ;==>ConfigureWired
+	;check XML profile files are ok
+	UpdateOutput("Configuring Wired Profile...")
+	UpdateProgress(10);
+	If (FileExists($wired_xmlfile) == 0) Then
+		MsgBox(16, "Error", "Wired Config file missing. Exiting...")
+		Exit
+	EndIf
+
+	;Get the mac address and network name
+	$ip = "localhost"
+	Dim $adapter = "";
+	$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
+	$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
+	Dim $networkcount = 0
+	UpdateProgress(20);
+	If IsObj($colItems) Then
+		For $objItem In $colItems
+			if ($objItem.AdapterType == "Ethernet 802.3") Then
+				if (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
+					$adapter &= "Caption: " & $objItem.Caption & @CRLF
+					$adapter &= "Description: " & $objItem.Description & @CRLF
+					$adapter &= "Index: " & $objItem.Index & @CRLF
+					$adapter &= "NetID: " & $objItem.netconnectionid & @CRLF
+					$wired_interface = $objItem.netconnectionid
+					$adapter &= "Name: " & $objItem.name & @CRLF
+					$adapter &= "Type: " & $objItem.AdapterType & @CRLF
+					;Ethernet 802.3
+					$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
+					$adapter &= "*********************"
+					DoDebug("[setup] Applying profile to :" & $adapter)
+					$adapter = ""
+					$networkcount += 1
+					UpdateOutput("Configuring " & $objItem.netconnectionid)
+					$cmd = "netsh lan add profile filename=""" & $wired_xmlfile & """ interface=""" & $wired_interface & """"
+					DoDebug("[setup]802.3 command=" & $cmd)
+					RunWait($cmd, "", @SW_HIDE)
+					UpdateProgress(20);
+				EndIf
+			EndIf
+			ExitLoop
+		Next
+	Else
+		DoDebug("[setup]No 802.3 Adapter found!")
+	EndIf
+	UpdateOutput("Wired 8021x profile added")
+	UpdateProgress(10);
+EndFunc   ;==>ConfigWired1x
 
 Func SetCert()
 	;Certificate install
@@ -308,18 +366,34 @@ Func SetCert()
 	UpdateOutput("Installed certificate")
 EndFunc   ;==>SetCert
 
-Func _GetMACFromIP($sIP)
+Func GetMac($adapterType)
 	$ip = "localhost"
-	$mac = "";
+	$mac = ""
+	$query = "SELECT * FROM Win32_NetworkAdapter WHERE " & _
+			"AdapterTypeID = 0 " & _
+			"AND " & _
+			"Manufacturer != 'Microsoft' " & _
+			"AND " & _
+			"NOT PNPDeviceID LIKE 'ROOT\\%'" & _
+			"AND " & _
+			"MACAddress IS NOT NULL"
 	$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-	$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
+	$colItems = $objWMIService.ExecQuery($query, "WQL", 0x30)
 	If IsObj($colItems) Then
 		For $objItem In $colItems
 			if ($objItem.AdapterType == "Ethernet 802.3") Then
-				if (StringInStr($objItem.description, "Wi") Or StringInStr($objItem.description, "Wireless") Or StringInStr($objItem.description, "802.11")) Then
-					DoDebug("[support]802.3 Adapter mac address found" & $objItem.MACAddress)
-					$mac &= $objItem.MACAddress
-					$adapter = ""
+				If (StringCompare($adapterType, "wireless") == 0) Then
+					if (StringInStr($objItem.description, "Wi") Or StringInStr($objItem.description, "Wireless") Or StringInStr($objItem.description, "802.11")) Then
+						DoDebug("[support]802.11 Adapter mac address found" & $objItem.MACAddress)
+						$mac &= $objItem.MACAddress
+					EndIf
+				EndIf
+				;WIRED
+				If (StringCompare($adapterType, "wired") == 0) Then
+					if (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
+						DoDebug("[support]802.3 Adapter mac address found" & $objItem.MACAddress)
+						$mac &= $objItem.MACAddress
+					EndIf
 				EndIf
 			EndIf
 			;ExitLoop
@@ -329,7 +403,7 @@ Func _GetMACFromIP($sIP)
 	EndIf
 	;Return the user readble MAC address
 	Return $mac
-EndFunc   ;==>_GetMACFromIP
+EndFunc   ;==>GetMac
 
 Func Fallback_Connect()
 	;connect to fallback network for support funcs to work
@@ -1037,31 +1111,7 @@ While 1
 					$XMLProfile = FileRead($xmlfile)
 				EndIf
 
-				if ($wired == 1) Then
-					;Check if the DOT1XSVC (Wired LAN Auto Config) Service is running.  If not start it.
-					If IsServiceRunning("DOT3SVC") == 0 Then
-						DoDebug("[setup]DOT3SVC not running")
-						;Set Wireless Zero Configuration Service to run automatically
-						Run("sc config DOT3SVC start= auto", "", @SW_HIDE)
-						;Start the Wireless Zero Configuration Service
-						RunWait("net start DOT3SVC", "", @SW_HIDE)
-						;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
-						$WZCSVCStarted = 1
-						UpdateOutput("******Wired Dot1x Service Started")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]DOT3SVC Already Running")
-					EndIf
 
-					;check XML profile files are ok
-					UpdateOutput("Configuring Wired Profile...")
-					UpdateProgress(10);
-					If (FileExists($wired_xmlfile) == 0) Then
-						MsgBox(16, "Error", "Wired Config file missing. Exiting...")
-						Exit
-					EndIf
-
-				EndIf
 
 
 				;Certificate install
@@ -1258,46 +1308,7 @@ While 1
 
 				EndIf
 				;------------------------------------------------------------------------------------------------------WIRED CONFIG
-				if ($wired == 1) Then
-					;Get the mac address and network name
-					$ip = "localhost"
-					$adapter = "";
-					$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-					$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
-					$networkcount = 0
-					UpdateProgress(20);
-					If IsObj($colItems) Then
-						For $objItem In $colItems
-							if ($objItem.AdapterType == "Ethernet 802.3") Then
-								if (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
-									$adapter &= "Caption: " & $objItem.Caption & @CRLF
-									$adapter &= "Description: " & $objItem.Description & @CRLF
-									$adapter &= "Index: " & $objItem.Index & @CRLF
-									$adapter &= "NetID: " & $objItem.netconnectionid & @CRLF
-									$wired_interface = $objItem.netconnectionid
-									$adapter &= "Name: " & $objItem.name & @CRLF
-									$adapter &= "Type: " & $objItem.AdapterType & @CRLF
-									;Ethernet 802.3
-									$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
-									$adapter &= "*********************"
-									DoDebug("[setup] Applying profile to :" & $adapter)
-									$adapter = ""
-									$networkcount += 1
-									UpdateOutput("Configuring " & $objItem.netconnectionid)
-									$cmd = "netsh lan add profile filename=""" & $wired_xmlfile & """ interface=""" & $wired_interface & """"
-									DoDebug("[setup]802.3 command=" & $cmd)
-									RunWait($cmd, "", @SW_HIDE)
-									UpdateProgress(20);
-								EndIf
-							EndIf
-							ExitLoop
-						Next
-					Else
-						DoDebug("[setup]No 802.3 Adapter found!")
-					EndIf
-					UpdateOutput("Wired 8021x profile added")
-					UpdateProgress(10);
-				EndIf
+				if ($wired == 1) Then ConfigWired1x()
 				;------------------------------------------------------------------------------------------------------NAP/SoH CONFIG
 				;Enable NAP
 				if ($nap == 1) Then
@@ -1389,33 +1400,6 @@ While 1
 						Exit
 					EndIf
 					$XMLProfile3 = FileRead($xmlfile_additional)
-				EndIf
-
-
-				if ($wired == 1) Then
-					;Check if the DOT1XSVC (Wired LAN Auto Config) Service is running.  If not start it.
-					If IsServiceRunning("DOT3SVC") == 0 Then
-						DoDebug("[setup]DOT3SVC not running")
-						;Set Wireless Zero Configuration Service to run automatically
-						Run("sc config DOT3SVC start= auto", "", @SW_HIDE)
-						;Start the Wireless Zero Configuration Service
-						RunWait("net start DOT3SVC", "", @SW_HIDE)
-						;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
-						$WZCSVCStarted = 1
-						UpdateOutput("******Wired Dot1x Service Started")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]DOT3SVC Already Running")
-					EndIf
-
-					;check XML profile files are ok
-					UpdateOutput("Configuring Wired Profile...")
-					UpdateProgress(10);
-					If (FileExists($wired_xmlfile) == 0) Then
-						MsgBox(16, "Error", "Wired Config file missing. Exiting...")
-						Exit
-					EndIf
-
 				EndIf
 
 				;Certificate install
@@ -1619,48 +1603,8 @@ While 1
 				EndIf
 
 				;------------------------------------------------------------------------------------------------------WIRED CONFIG
-				if ($wired == 1) Then
-					DoDebug("[setup]802.3 config install")
-					;Get the mac address and network name
-					$ip = "localhost"
-					$adapter = "";
-					$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-					$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
-					$networkcount = 0
-					UpdateProgress(20);
-					If IsObj($colItems) Then
-						For $objItem In $colItems
-							if ($objItem.AdapterType == "Ethernet 802.3") Then
-								DoDebug("[setup]802.3 device found=" & $objItem.Description)
-								if (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
-									$adapter &= "[setup]Caption: " & $objItem.Caption & @CRLF
-									$adapter &= "[setup]Description: " & $objItem.Description & @CRLF
-									$adapter &= "[setup]Index: " & $objItem.Index & @CRLF
-									$adapter &= "[setup]NetID: " & $objItem.netconnectionid & @CRLF
-									$wired_interface = $objItem.netconnectionid
-									$adapter &= "[setup]Name: " & $objItem.name & @CRLF
-									$adapter &= "[setup]Type: " & $objItem.AdapterType & @CRLF
-									;Ethernet 802.3
-									$adapter &= "[setup]MAC Address: " & $objItem.MACAddress & @CRLF
-									$adapter &= "[setup]*********************"
-									DoDebug("[setup]Applying profile to :" & $adapter)
-									$adapter = ""
-									$networkcount += 1
-									UpdateOutput("Configuring " & $objItem.netconnectionid)
-									$cmd = "netsh lan add profile filename=""" & $wired_xmlfile & """ interface=""" & $wired_interface & """"
-									DoDebug("[setup]802.3 command=" & $cmd)
-									RunWait($cmd, "", @SW_HIDE)
-									UpdateProgress(20);
-								EndIf
-							EndIf
-							;ExitLoop
-						Next
-					Else
-						DoDebug("[setup]No 802.3 Adapter found!")
-					EndIf
-					UpdateOutput("***Wired 8021x profile added")
-					UpdateProgress(10);
-				EndIf
+				if ($wired == 1) Then ConfigWired1x()
+
 				;------------------------------------------------------------------------------------------------------NAP/SoH CONFIG
 				;Enable NAP
 				if ($nap == 1) Then
@@ -1791,7 +1735,7 @@ While 1
 			Else
 				$ip_touse = @IPAddress1
 			EndIf
-			$mac = _GetMACFromIP($ip_touse)
+			$mac = GetMac("wireless")
 
 			DoDebug("[support]mac=" & $mac)
 			;MsgBox (0, "MAC Value", $MAC)
