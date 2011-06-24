@@ -5,7 +5,8 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.1
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.2
+#AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
@@ -108,89 +109,90 @@
 ;-------------------------------------------------------------------------
 ; Global variables and stuff
 
-$VERSION = "V2.0.1"
+;Main config file
+$CONFIGFILE = "config.ini"
 
 ;Check for config File
 FileChangeDir(@ScriptDir)
-If (FileExists("config.ini") == 0) Then
+If (FileExists($CONFIGFILE) == 0) Then
 	MsgBox(16, "Error", "Config file not found.")
 	Exit
 EndIf
 
 $WZCSVCStarted = 0
-$SECURE_MACHINE = IniRead("config.ini", "su1x", "SECURE_MACHINE", "0")
-$DEBUG = IniRead("config.ini", "su1x", "DEBUG", "0")
-$wireless = IniRead("config.ini", "su1x", "wireless", "1")
-$wired = IniRead("config.ini", "su1x", "wired", "0")
-$USESPLASH = IniRead("config.ini", "su1x", "USESPLASH", "0")
-$wired_xmlfile = IniRead("config.ini", "su1x", "wiredXMLfile", "Wired_Profile.xml")
-$xmlfile = IniRead("config.ini", "su1x", "xmlfile", "exported.xml")
-$xmlfile_wpa = IniRead("config.ini", "su1x", "xmlfile_wpa", "exported-wpa.xml")
-$xmlfile_additional = IniRead("config.ini", "su1x", "xmlfile_additional", "wireless-wpa.xml")
-$tryadditional_profile = IniRead("config.ini", "su1x", "tryadditional_profile", "0")
-$xmlfile7 = IniRead("config.ini", "su1x", "xmlfile7", "exported-7.xml")
-$xmlfile7_wpa = IniRead("config.ini", "su1x", "xmlfile7_wpa", "exported-7-wpa.xml")
-$xmlfilexpsp2 = IniRead("config.ini", "su1x", "xmlfilexpsp2", "exported-sp2.xml")
-$tryadditional = IniRead("config.ini", "su1x", "tryadditional", "0")
-$win7 = IniRead("config.ini", "su1x", "win7", "1")
+$SECURE_MACHINE = IniRead($CONFIGFILE, "su1x", "SECURE_MACHINE", "0")
+$DEBUG = IniRead($CONFIGFILE, "su1x", "DEBUG", "0")
+$wireless = IniRead($CONFIGFILE, "su1x", "wireless", "1")
+$wired = IniRead($CONFIGFILE, "su1x", "wired", "0")
+$USESPLASH = IniRead($CONFIGFILE, "su1x", "USESPLASH", "0")
+$wired_xmlfile = IniRead($CONFIGFILE, "su1x", "wiredXMLfile", "Wired_Profile.xml")
+$xmlfile = IniRead($CONFIGFILE, "su1x", "xmlfile", "exported.xml")
+$xmlfile_wpa = IniRead($CONFIGFILE, "su1x", "xmlfile_wpa", "exported-wpa.xml")
+$xmlfile_additional = IniRead($CONFIGFILE, "su1x", "xmlfile_additional", "wireless-wpa.xml")
+$tryadditional_profile = IniRead($CONFIGFILE, "su1x", "tryadditional_profile", "0")
+$xmlfile7 = IniRead($CONFIGFILE, "su1x", "xmlfile7", "exported-7.xml")
+$xmlfile7_wpa = IniRead($CONFIGFILE, "su1x", "xmlfile7_wpa", "exported-7-wpa.xml")
+$xmlfilexpsp2 = IniRead($CONFIGFILE, "su1x", "xmlfilexpsp2", "exported-sp2.xml")
+$tryadditional = IniRead($CONFIGFILE, "su1x", "tryadditional", "0")
+$win7 = IniRead($CONFIGFILE, "su1x", "win7", "1")
 $progress_meter = 0
-$startText = IniRead("config.ini", "su1x", "startText", "SWIS")
-$title = IniRead("config.ini", "su1x", "title", "SWIS Eduroam - Setup Tool")
-$hint = IniRead("config.ini", "su1x", "hint", "0")
-$username = IniRead("config.ini", "su1x", "username", "123456@swansea.ac.uk")
-$proxy = IniRead("config.ini", "su1x", "proxy", "1")
-$browser_reset = IniRead("config.ini", "su1x", "browser_reset", "0")
-;$SSID = IniRead("config.ini", "getprofile", "ssid", "eduroam")
-$priority = IniRead("config.ini", "getprofile", "priority", "0")
-$nap = IniRead("config.ini", "su1x", "nap", "0")
-$showup = IniRead("config.ini", "su1x", "showup", "0")
-$showuptick = IniRead("config.ini", "su1x", "showtick", "0")
-$scheduletask = IniRead("config.ini", "su1x", "scheduletask", "0")
+$startText = IniRead($CONFIGFILE, "su1x", "startText", "SWIS")
+$title = IniRead($CONFIGFILE, "su1x", "title", "SWIS Eduroam - Setup Tool")
+$hint = IniRead($CONFIGFILE, "su1x", "hint", "0")
+$username = IniRead($CONFIGFILE, "su1x", "username", "123456@swansea.ac.uk")
+$proxy = IniRead($CONFIGFILE, "su1x", "proxy", "1")
+$browser_reset = IniRead($CONFIGFILE, "su1x", "browser_reset", "0")
+;$SSID = IniRead($CONFIGFILE, "getprofile", "ssid", "eduroam")
+$priority = IniRead($CONFIGFILE, "getprofile", "priority", "0")
+$nap = IniRead($CONFIGFILE, "su1x", "nap", "0")
+$showup = IniRead($CONFIGFILE, "su1x", "showup", "0")
+$showuptick = IniRead($CONFIGFILE, "su1x", "showtick", "0")
+$scheduletask = IniRead($CONFIGFILE, "su1x", "scheduletask", "0")
 
 
 ;----Printing
-$show_printing = IniRead("config.ini", "print", "printing", "0")
-$printer = IniRead("config.ini", "print", "printer", "Swansea Uni Wireless")
-$printer_xp = IniRead("config.ini", "print", "printer_xp", "0")
-$printer_vista = IniRead("config.ini", "print", "printer_vista", "0")
-$printer_7 = IniRead("config.ini", "print", "printer_7", "0")
-$printer_port = IniRead("config.ini", "print", "printer_port", "0")
-$printer_message_title = IniRead("config.ini", "print", "printer_message_title", "0")
-$printer_message = IniRead("config.ini", "print", "printer_message", "0")
+$show_printing = IniRead($CONFIGFILE, "print", "printing", "0")
+$printer = IniRead($CONFIGFILE, "print", "printer", "Swansea Uni Wireless")
+$printer_xp = IniRead($CONFIGFILE, "print", "printer_xp", "0")
+$printer_vista = IniRead($CONFIGFILE, "print", "printer_vista", "0")
+$printer_7 = IniRead($CONFIGFILE, "print", "printer_7", "0")
+$printer_port = IniRead($CONFIGFILE, "print", "printer_port", "0")
+$printer_message_title = IniRead($CONFIGFILE, "print", "printer_message_title", "0")
+$printer_message = IniRead($CONFIGFILE, "print", "printer_message", "0")
 
 ;---Image Files
-$BANNER = IniRead("config.ini", "images", "BANNER", "lis-header.jpg")
-$SPLASHFILE = IniRead("config.ini", "images", "SLPASHFILE", "big.jpg")
-$bubblexp = IniRead("config.ini", "images", "bubblexp", "bubble1.jpg")
-$bubblevista = IniRead("config.ini", "images", "bubblevista", "bubble-vista.jpg")
-$bubble_xp_connected = IniRead("config.ini", "images", "bubble_xp_connected", "bubble-connected-xp.jpg")
-$win7_connected = IniRead("config.ini", "images", "win7_connected", "connected-7.jpg")
-$vista_connected = IniRead("config.ini", "images", "vista_connected", "connected-vista.jpg")
+$BANNER = IniRead($CONFIGFILE, "images", "BANNER", "lis-header.jpg")
+$SPLASHFILE = IniRead($CONFIGFILE, "images", "SLPASHFILE", "big.jpg")
+$bubblexp = IniRead($CONFIGFILE, "images", "bubblexp", "bubble1.jpg")
+$bubblevista = IniRead($CONFIGFILE, "images", "bubblevista", "bubble-vista.jpg")
+$bubble_xp_connected = IniRead($CONFIGFILE, "images", "bubble_xp_connected", "bubble-connected-xp.jpg")
+$win7_connected = IniRead($CONFIGFILE, "images", "win7_connected", "connected-7.jpg")
+$vista_connected = IniRead($CONFIGFILE, "images", "vista_connected", "connected-vista.jpg")
 
 ;-----SSID
-$SSID = IniRead("config.ini", "getprofile", "ssid", "eduroam")
-$SSID_Fallback = IniRead("config.ini", "getprofile", "ssid_fallback", "")
-$SSID_Additional = IniRead("config.ini", "getprofile", "ssid_additional", "eduroam-wpa")
+$SSID = IniRead($CONFIGFILE, "getprofile", "ssid", "eduroam")
+$SSID_Fallback = IniRead($CONFIGFILE, "getprofile", "ssid_fallback", "")
+$SSID_Additional = IniRead($CONFIGFILE, "getprofile", "ssid_additional", "eduroam-wpa")
 
 
 ;-----SSID to remove
-$removessid = IniRead("config.ini", "remove", "removessid", "0")
-$SSID1 = IniRead("config.ini", "remove", "ssid1", "eduroam")
-$SSID2 = IniRead("config.ini", "remove", "ssid2", "eduroam-setup")
-$SSID3 = IniRead("config.ini", "remove", "ssid3", "unrioam")
+$removessid = IniRead($CONFIGFILE, "remove", "removessid", "0")
+$SSID1 = IniRead($CONFIGFILE, "remove", "ssid1", "eduroam")
+$SSID2 = IniRead($CONFIGFILE, "remove", "ssid2", "eduroam-setup")
+$SSID3 = IniRead($CONFIGFILE, "remove", "ssid3", "unrioam")
 
 ;------Certificates
-$certificate = IniRead("config.ini", "certs", "cert", "mycert.cer")
-$use_cert = IniRead("config.ini", "certs", "usecert", "0")
+$certificate = IniRead($CONFIGFILE, "certs", "cert", "mycert.cer")
+$use_cert = IniRead($CONFIGFILE, "certs", "usecert", "0")
 
 ;------Support
-$show_support = IniRead("config.ini", "support", "show_support", "0")
-$send_ldap = IniRead("config.ini", "support", "send_ldap", "0")
-$send_problem = IniRead("config.ini", "support", "send_problem", "0")
-$ldap_url = IniRead("config.ini", "support", "ldap_url", "0")
-$regtest_url = IniRead("config.ini", "support", "regtest_url", "0")
-$sendsupport_url = IniRead("config.ini", "support", "sendsupport_url", "0")
-$sendsupport_dept = IniRead("config.ini", "support", "sendsupport_dept", "0")
+$show_support = IniRead($CONFIGFILE, "support", "show_support", "0")
+$send_ldap = IniRead($CONFIGFILE, "support", "send_ldap", "0")
+$send_problem = IniRead($CONFIGFILE, "support", "send_problem", "0")
+$ldap_url = IniRead($CONFIGFILE, "support", "ldap_url", "0")
+$regtest_url = IniRead($CONFIGFILE, "support", "regtest_url", "0")
+$sendsupport_url = IniRead($CONFIGFILE, "support", "sendsupport_url", "0")
+$sendsupport_dept = IniRead($CONFIGFILE, "support", "sendsupport_dept", "0")
 
 ;------------------------------------------------------------------------------------------------------------
 ;---------Variable Initialisation
@@ -478,7 +480,7 @@ Func doHint()
 		If $msg2 == $finish Then ExitLoop
 	WEnd
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>DoHint
+EndFunc   ;==>doHint
 
 ;Problem submission window
 Func doGetHelpInfo()
@@ -493,7 +495,7 @@ Func doGetHelpInfo()
 		If $msg2 == $finish Then ExitLoop
 	WEnd
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>DoGetHelpInfo
+EndFunc   ;==>doGetHelpInfo
 
 
 ;Checks if a specified service is running.
@@ -666,7 +668,7 @@ Func setScheduleTask()
 		DoDebug("Scheduled Task:" & $st_result)
 		;schtasks.exe /create /tn "su1x-auth-start-tool" /xml "f:\eduroam tool\event triggers\su1x-auth-start-orig.xml"
 	EndIf
-EndFunc   ;==>SetScheduleTask
+EndFunc   ;==>setScheduleTask
 
 Func alreadyRunning()
 	;kill windows sup gui first
@@ -735,7 +737,7 @@ Func alreadyRunning()
 		EndIf
 	EndIf
 
-EndFunc   ;==>AlreadyRunning
+EndFunc   ;==>alreadyRunning
 
 
 
