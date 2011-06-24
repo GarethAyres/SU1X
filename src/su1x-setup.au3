@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.2
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.3
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -293,6 +293,20 @@ Func DoDump($text)
 		FileClose($file)
 	EndIf
 EndFunc   ;==>DoDump
+
+;Function to configure a wireless adapter
+Func ConfigureWired()
+
+EndFunc   ;==>ConfigureWired
+
+Func SetCert()
+	;Certificate install
+	DoDebug("[setup]Cert Install = " & $certificate)
+	$result = Run(@ScriptDir & "\CertMgr.Exe /all /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
+	;$result = Run(@ScriptDir & "\CertMgr.Exe /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
+	DoDebug("[setup]result of cert=" & $result)
+	UpdateOutput("Installed certificate")
+EndFunc   ;==>SetCert
 
 Func _GetMACFromIP($sIP)
 	$ip = "localhost"
@@ -1051,13 +1065,7 @@ While 1
 
 
 				;Certificate install
-				If ($use_cert == 1) Then
-					DoDebug("[setup]Cert Install = " & $certificate)
-					$result = Run(@ScriptDir & "\CertMgr.Exe /all /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
-					;$result = Run(@ScriptDir & "\CertMgr.Exe /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
-					DoDebug("[setup]result of cert=" & $result)
-					UpdateOutput("Installed certificate")
-				EndIf
+				If ($use_cert == 1) Then SetCert()
 
 				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
 				if ($wireless == 1) Then
@@ -1411,13 +1419,7 @@ While 1
 				EndIf
 
 				;Certificate install
-				If ($use_cert == 1) Then
-					DoDebug("[setup]Cert Install")
-					$result = Run(@ScriptDir & "\CertMgr.Exe /all /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
-					;$result = Run(@ScriptDir & "\CertMgr.Exe /add " & $certificate & " /s /r localMachine root", "", @SW_HIDE)
-					DoDebug("[setup]result of cert=" & $result)
-					UpdateOutput("Installed certificate")
-				EndIf
+				If ($use_cert == 1) Then SetCert()
 
 				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
 				if ($wireless == 1) Then
