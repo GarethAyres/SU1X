@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.6
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.7
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -433,13 +433,15 @@ Func CheckService($ServiceName)
 		DoDebug("[CheckService]" & $ServiceName & " not running")
 		Run("sc config " & $ServiceName & " start= auto", "", @SW_HIDE)
 		RunWait("net start " & $ServiceName, "", @SW_HIDE)
-		UpdateOutput("******Problem starting service:" & $ServiceName)
-		UpdateProgress(5);
+		_Wlan_SetInterface($hClientHandle, $pGUID, 0, "Auto Config Enabled")
 		If IsServiceRunning($ServiceName) == 0 Then
 			UpdateOutput("******Problem starting service:" & $ServiceName)
 			UpdateProgress(5);
 			DoDebug("[CheckService]" & $ServiceName & " start failure")
 			Return 0
+		Else
+			UpdateOutput("******Started service:" & $ServiceName)
+			UpdateProgress(5);
 		EndIf
 	Else
 		DoDebug("[CheckService]" & $ServiceName & " Already Running")
@@ -479,9 +481,7 @@ Func Fallback_Connect()
 			;Check if the Wireless Zero Configuration Service is running.  If not start it.
 			CheckService("WLANSVC")
 		Else
-			;ASSUME XP
-			;***************************************
-			;win XP specific checks
+			;XP
 			CheckService("WZCSVC")
 		EndIf
 
