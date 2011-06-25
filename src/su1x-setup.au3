@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.7
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.8
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -220,7 +220,6 @@ Dim $output
 Dim $progressbar1
 Dim $myedit
 Dim $output
-Dim $run_already
 Dim $loopcheck = 0
 Dim $loopcheck2 = 0
 Dim $debugResult
@@ -230,9 +229,9 @@ Dim $filename
 Dim $num_arguments = 0
 Dim $tryconnect = "no"
 Dim $probdesc = "none"
-Global $hClientHandle
-Global $pGUID
-Global $Enum
+Global $hClientHandle = 0
+Global $pGUID = 0
+Global $Enum[3][3]
 
 ;------------------------------------------------------------------------------------------------
 ;Set up Debugging
@@ -452,13 +451,26 @@ EndFunc   ;==>CheckService
 ;Function to start wifi dll connection and check its not already open
 Func WlanAPIConnect()
 	;hClientHandle returned as @extended
-	Local $interfaceWifi = _Wlan_StartSession()
-	If @error Then
-		MsgBox(16, "DEBUG", "Wifi DLL Open Error: " & @extended & $interfaceWifi)
+	if (UBound($Enum)) Then
+		if (StringLen($Enum[0][1]) > 0) Then
+			DoDebug("[WLANConnect]WLANAPI connected")
+			Return 1
+		Else
+			DoDebug("[WLANConnect]WLANAPI connected, but no adapter found")
+			Return 0
+		EndIf
+	Else
+		Local $interfaceWifi = _Wlan_StartSession()
+		If @error Then
+			MsgBox(16, "DEBUG", "Wifi DLL Open Error: " & @extended & $interfaceWifi)
+			Return 0
+		EndIf
+		$hClientHandle = @extended
+		$pGUID = $interfaceWifi[0][0]
+		$Enum = _Wlan_EnumInterfaces($hClientHandle)
+		DoDebug("[WLANConnect]WLANAPI connected:" & $Enum[0][1])
+		Return 1
 	EndIf
-	$hClientHandle = @extended
-	$Enum = _Wlan_EnumInterfaces($hClientHandle)
-	Return $interfaceWifi
 EndFunc   ;==>WlanAPIConnect
 
 ;Function to start wifi dll connection and check its not already open
@@ -468,10 +480,35 @@ Func WlanAPIClose()
 	If @error Then
 		MsgBox(16, "DEBUG", "Wifi DLL Close Error")
 	EndIf
-	$pGUID = ""
-	$hClientHandle = ""
-	$Enum = ""
+	$pGUID = 0
+	$hClientHandle = 0
+	$Enum = 0
 EndFunc   ;==>WlanAPIClose
+
+;Function to check if wlanapi in use already. return true if so.
+Func WlanAPICheck()
+	if (Not ($hClientHandle) Or @error > 0) Then
+		WlanAPIConnect()
+		If @error Then
+			MsgBox(16, "DEBUG", "Wifi DLL Open Error")
+			Return 0
+		ElseIf (UBound($Enum) == 0) Then
+			UpdateOutput("***Wireless Adapter Problem")
+			MsgBox(16, "Error", "No Wireless Adapter Found.")
+			Return 0
+		ElseIf (StringLen($Enum[0][1]) < 1) Then
+			UpdateOutput("***Wireless Adapter Problem")
+			MsgBox(16, "Error", "No Wireless Adapter Found.")
+			Return 0
+		Else
+			Return 1
+		EndIf
+	Else
+		Return 1
+	EndIf
+	Return 1
+EndFunc   ;==>WlanAPICheck
+
 
 Func Fallback_Connect()
 	;connect to fallback network for support funcs to work
@@ -486,25 +523,8 @@ Func Fallback_Connect()
 		EndIf
 
 		;Check that serviec running before disconnect
-
-		if ($run_already > 0) Then
-			_Wlan_CloseHandle()
-		EndIf
-
-		$hClientHandle = _Wlan_OpenHandle()
-		$Enum = _Wlan_EnumInterfaces($hClientHandle)
-
-
-		If (UBound($Enum) == 0) Then
-			DoDebug("[fallback]Error, No Wireless Adapter Found.")
-			$wifi_card = 0
-		Else
-			$wifi_card = 1
-		EndIf
-
-		If ($wifi_card) Then
-			$pGUID = $Enum[0][0]
-
+		WlanAPIConnect()
+		If (WlanAPICheck()) Then
 			;make sure windows can manage wifi card
 			DoDebug("[fallback]Setting windows to manage wifi")
 			;The "use Windows to configure my wireless network settings" checkbox - Needs to be enabled for many funtions to work
@@ -956,14 +976,14 @@ While 1
 		EndIf
 		;-----------------------------------------------------------Exit Tool
 		If $msg == $exitb Then
-			_Wlan_EndSession(-1)
+			WlanAPIClose()
 			DoDebug("***Exiting SU1X***")
 			Exit
 			ExitLoop
 		EndIf
 
 		If $msg == $GUI_EVENT_CLOSE Then
-			_Wlan_EndSession(-1)
+			WlanAPIClose()
 			DoDebug("***Exiting SU1X***")
 			;close file if dump set
 			If ($DEBUG > 0) Then
@@ -1155,20 +1175,10 @@ While 1
 
 					$XMLProfile = FileRead($xmlfile)
 
-					if ($run_already < 1) Then
-						$hClientHandle = _Wlan_OpenHandle()
-						$Enum = _Wlan_EnumInterfaces($hClientHandle)
+					if (Not (WlanAPIConnect())) Then
+						if (Not (WlanAPICheck())) Then ExitLoop
 					EndIf
 
-					If (UBound($Enum) == 0) Then
-						DoDebug("[setup]Enumeration of wlan adapter" & @error)
-						MsgBox(16, "Error", "No Wireless Adapter Found.")
-						;Exit
-						UpdateOutput("***Error - No wireless adapter found***")
-						UpdateProgress(100);
-						ExitLoop (1)
-					EndIf
-					$pGUID = $Enum[0][0]
 					DoDebug("[setup]Adapter=" & $Enum[0][1])
 
 					;Check for profiles to remove
@@ -1312,7 +1322,6 @@ While 1
 					;UpdateProgress(5);
 					;RunWait ("net start WZCSVC","",@SW_HIDE)
 					UpdateProgress(10);
-					$run_already = 1
 
 				EndIf
 				;------------------------------------------------------------------------------------------------------WIRED CONFIG
@@ -1341,6 +1350,19 @@ While 1
 				EndIf
 
 				If ($wireless == 1) Then
+
+				EndIf
+
+
+				;Certificate install
+				If ($use_cert == 1) Then SetCert()
+
+				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
+				if ($wireless == 1) Then
+					if (Not (WlanAPIConnect())) Then
+						if (Not (WlanAPICheck())) Then ExitLoop
+					EndIf
+					DoDebug("[setup] adpter=" & $Enum[0][1])
 					;Check if the Wireless Zero Configuration Service is running.  If not start it.
 					CheckService("WLANSVC")
 
@@ -1381,36 +1403,6 @@ While 1
 						EndIf
 						$XMLProfile3 = FileRead($xmlfile_additional)
 					EndIf
-				EndIf
-
-
-				;Certificate install
-				If ($use_cert == 1) Then SetCert()
-
-				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
-				if ($wireless == 1) Then
-					if ($run_already < 1) Then
-						$hClientHandle = _Wlan_OpenHandle()
-						$Enum = _Wlan_EnumInterfaces($hClientHandle)
-					EndIf
-
-					if ($run_already > 0) Then
-						_Wlan_CloseHandle()
-						$hClientHandle = _Wlan_OpenHandle()
-						$Enum = _Wlan_EnumInterfaces($hClientHandle)
-					EndIf
-
-					If (UBound($Enum) == 0) Then
-						DoDebug("[setup]Enumeration error=" & @error)
-						MsgBox(16, "Error", "No Wireless Adapter Found.")
-						;Exit
-						UpdateOutput("***Error - No wireless adapter found***")
-						UpdateProgress(100);
-						ExitLoop (1)
-					EndIf
-					$pGUID = $Enum[0][0]
-					DoDebug("[setup] adpter=" & $Enum[0][1])
-
 					;updateoutput($hClientHandle & "," & $Enum[0][1] & "," &$pGUID)
 					;Check for profiles to remove
 					if ($removessid > 0) Then RemoveSSIDs($hClientHandle, $pGUID)
@@ -1490,7 +1482,6 @@ While 1
 					_Wlan_Connect($hClientHandle, $pGUID, $SSID)
 					DoDebug("[setup]_Wlan_Connect has finished" & @CRLF)
 					UpdateProgress(10);
-					$run_already = 1
 					Sleep(1500)
 					;check if connected, if not, connect to fallback network
 					Local $loop_count = 0
@@ -1631,7 +1622,6 @@ While 1
 				UpdateOutput("***Connecting to fallback:" & $SSID_Fallback & "***")
 				UpdateProgress(20)
 				Fallback_Connect()
-				$run_already = 1
 			EndIf
 
 			UpdateProgress(10);
@@ -1705,19 +1695,13 @@ While 1
 			EndIf
 			UpdateProgress(10);
 
-			if ($run_already > 0) Then _Wlan_CloseHandle()
-
-			$hClientHandle = _Wlan_OpenHandle()
-			$Enum = _Wlan_EnumInterfaces($hClientHandle)
-
-			If (UBound($Enum) == 0) Then
-				DoDebug("[support]Enumeration error=" & @error)
-				DoDebug("[support]Error, No Wireless Adapter Found.")
-				$wifi_card = 0
-			Else
-				$wifi_card = 1
+			if (Not (WlanAPIConnect())) Then
+				if (Not (WlanAPICheck())) Then
+					$wifi_card = 0
+				Else
+					$wifi_card = 1
+				EndIf
 			EndIf
-
 			If ($wifi_card) Then
 				UpdateOutput("Wireless Adapter OK")
 				$output &= "Wireless Adapter [OK]" & @CRLF
@@ -1729,7 +1713,6 @@ While 1
 
 
 			If ($wifi_card) Then
-				$pGUID = $Enum[0][0]
 				$wifi_adapter = $Enum[0][1]
 				$wifi_state = $Enum[0][2]
 				DoDebug("[support]wifi card found")
@@ -1943,7 +1926,6 @@ While 1
 			;DoDebug("[support]Wifi adapter="&$wifi_adapter)
 			;DoDebug("[support]Wifi state="&$wifi_state)
 			DoDebug("[support]LDAP Test:" & $response)
-			$run_already = 1
 
 
 			DoDump("****SU1X Dump of Support Data****")
@@ -2026,17 +2008,9 @@ While 1
 
 			;if wireless
 			if ($wireless == 1) Then
-				$hClientHandle = _Wlan_OpenHandle()
-				$Enum = _Wlan_EnumInterfaces($hClientHandle)
-				If (UBound($Enum) == 0) Then
-					DoDebug("[remove]error code on wlan enumeration=" & @error)
-					MsgBox(16, "Error", "No Wireless Adapter Found.")
-					;Exit
-					UpdateOutput("***Error - No wireless adapter found***")
-					UpdateProgress(100);
-					ExitLoop (1)
+				if (Not (WlanAPIConnect())) Then
+					if (Not (WlanAPICheck())) Then ExitLoop
 				EndIf
-				$pGUID = $Enum[0][0]
 				;Check for profiles to remove
 				DoDebug("[remove]Removing SSID" & $SSID)
 				$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
@@ -2218,29 +2192,8 @@ While 1
 				CheckService("WZCSVC")
 			EndIf
 
-			if ($run_already > 0) Then
-				_Wlan_EndSession(-1)
-			EndIf
-
-			$hClientHandle = _Wlan_OpenHandle()
-			$Enum = _Wlan_EnumInterfaces($hClientHandle)
-
-			If (UBound($Enum) == 0) Then
-				DoDebug("[reauth]Error, No Wireless Adapter Found.")
-				$wifi_card = 0
-				UpdateProgress(100)
-				ExitLoop
-			Else
-				$wifi_card = 1
-			EndIf
-
-			If ($wifi_card) Then
-				$pGUID = $Enum[0][0]
-			Else
-				UpdateOutput("***Wireless Adapter Problem")
-				MsgBox(16, "Error", "No Wireless Adapter Found.")
-				UpdateProgress(100)
-				ExitLoop
+			if (Not (WlanAPIConnect())) Then
+				if (Not (WlanAPICheck())) Then ExitLoop
 			EndIf
 
 			$wifi_eduroam = _Wlan_GetProfile($hClientHandle, $pGUID, $SSID)
@@ -2358,30 +2311,11 @@ While 1
 				;win XP specific checks
 				CheckService("WZCSVC")
 			EndIf
-			if ($run_already > 0) Then
-				_Wlan_EndSession(-1)
-			EndIf
-
-			$hClientHandle = _Wlan_OpenHandle()
-			$Enum = _Wlan_EnumInterfaces($hClientHandle)
-
-
-			If (UBound($Enum) == 0) Then
-				DoDebug("[reauth]Error, No Wireless Adapter Found.")
-				$wifi_card = 0
-				$argument1 = "fail"
-				ExitLoop
-			Else
-				$wifi_card = 1
-			EndIf
-
-			If ($wifi_card) Then
-				$pGUID = $Enum[0][0]
-			Else
-				UpdateOutput("***Wireless Adapter Problem")
-				MsgBox(16, "Error", "No Wireless Adapter Found.")
-				$argument1 = "fail"
-				ExitLoop
+			if (Not (WlanAPIConnect())) Then
+				if (Not (WlanAPICheck())) Then
+					$argument1 = "fail"
+					ExitLoop
+				EndIf
 			EndIf
 
 			;make sure windows can manage wifi card
