@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.5
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.6
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -223,7 +223,6 @@ Dim $output
 Dim $run_already
 Dim $loopcheck = 0
 Dim $loopcheck2 = 0
-Dim $NAPAgentOn = 0
 Dim $debugResult
 Dim $showall
 Dim $file
@@ -231,6 +230,9 @@ Dim $filename
 Dim $num_arguments = 0
 Dim $tryconnect = "no"
 Dim $probdesc = "none"
+Global $hClientHandle
+Global $pGUID
+Global $Enum
 
 ;------------------------------------------------------------------------------------------------
 ;Set up Debugging
@@ -297,17 +299,7 @@ EndFunc   ;==>DoDump
 ;Function to configure a wireless adapter
 Func ConfigWired1x()
 	;Check if the DOT1XSVC (Wired LAN Auto Config) Service is running.  If not start it.
-	If IsServiceRunning("DOT3SVC") == 0 Then
-		DoDebug("[setup]DOT3SVC not running")
-		;Set Wireless Zero Configuration Service to run automatically
-		Run("sc config DOT3SVC start= auto", "", @SW_HIDE)
-		;Start the Wireless Zero Configuration Service
-		RunWait("net start DOT3SVC", "", @SW_HIDE)
-		UpdateOutput("******Wired Dot1x Service Started")
-		UpdateProgress(5);
-	Else
-		DoDebug("[setup]DOT3SVC Already Running")
-	EndIf
+	CheckService("DOT3SVC")
 
 	;check XML profile files are ok
 	UpdateOutput("Configuring Wired Profile...")
@@ -435,34 +427,65 @@ Func RemoveSSIDs($hClientHandle, $pGUID)
 	EndIf
 EndFunc   ;==>RemoveSSIDs
 
+;Function to check a service is running
+Func CheckService($ServiceName)
+	If IsServiceRunning($ServiceName) == 0 Then
+		DoDebug("[CheckService]" & $ServiceName & " not running")
+		Run("sc config " & $ServiceName & " start= auto", "", @SW_HIDE)
+		RunWait("net start " & $ServiceName, "", @SW_HIDE)
+		UpdateOutput("******Problem starting service:" & $ServiceName)
+		UpdateProgress(5);
+		If IsServiceRunning($ServiceName) == 0 Then
+			UpdateOutput("******Problem starting service:" & $ServiceName)
+			UpdateProgress(5);
+			DoDebug("[CheckService]" & $ServiceName & " start failure")
+			Return 0
+		EndIf
+	Else
+		DoDebug("[CheckService]" & $ServiceName & " Already Running")
+	EndIf
+	Return 1
+EndFunc   ;==>CheckService
+
+;Function to start wifi dll connection and check its not already open
+Func WlanAPIConnect()
+	;hClientHandle returned as @extended
+	Local $interfaceWifi = _Wlan_StartSession()
+	If @error Then
+		MsgBox(16, "DEBUG", "Wifi DLL Open Error: " & @extended & $interfaceWifi)
+	EndIf
+	$hClientHandle = @extended
+	$Enum = _Wlan_EnumInterfaces($hClientHandle)
+	Return $interfaceWifi
+EndFunc   ;==>WlanAPIConnect
+
+;Function to start wifi dll connection and check its not already open
+Func WlanAPIClose()
+	;hClientHandle returned as @extended
+	_Wlan_EndSession($hClientHandle)
+	If @error Then
+		MsgBox(16, "DEBUG", "Wifi DLL Close Error")
+	EndIf
+	$pGUID = ""
+	$hClientHandle = ""
+	$Enum = ""
+EndFunc   ;==>WlanAPIClose
+
 Func Fallback_Connect()
 	;connect to fallback network for support funcs to work
 	If (StringLen($SSID_Fallback) > 0) Then
 		DoDebug("[fallback]connecting to fallback:" & $SSID_Fallback)
 		If (StringInStr(@OSVersion, "7", 0) Or StringInStr(@OSVersion, "VISTA", 0)) Then
 			;Check if the Wireless Zero Configuration Service is running.  If not start it.
-			If IsServiceRunning("WLANSVC") == 0 Then
-				$WZCSVCStarted = 0
-			Else
-				$WZCSVCStarted = 1
-			EndIf
+			CheckService("WLANSVC")
 		Else
 			;ASSUME XP
 			;***************************************
 			;win XP specific checks
-			If IsServiceRunning("WZCSVC") == 0 Then
-				$WZCSVCStarted = 0
-			Else
-				$WZCSVCStarted = 1
-			EndIf
+			CheckService("WZCSVC")
 		EndIf
 
 		;Check that serviec running before disconnect
-		If ($WZCSVCStarted) Then
-			;UpdateOutput("Wireless Service OK")
-		Else
-			UpdateOutput("***Wireless Service Problem")
-		EndIf
 
 		if ($run_already > 0) Then
 			_Wlan_CloseHandle()
@@ -1096,21 +1119,13 @@ While 1
 				EndIf
 
 
+				;Certificate install
+				If ($use_cert == 1) Then SetCert()
+
+				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
 				if ($wireless == 1) Then
 					;Check if the Wireless Zero Configuration Service is running.  If not start it.
-					If IsServiceRunning("WZCSVC") == 0 Then
-						DoDebug("[setup]WZC not running")
-						;Set Wireless Zero Configuration Service to run automatically
-						Run("sc config WZCSVC start= auto", "", @SW_HIDE)
-						;Start the Wireless Zero Configuration Service
-						RunWait("net start WZCSVC", "", @SW_HIDE)
-						;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
-						$WZCSVCStarted = 1
-						UpdateOutput("******Possible supplicant already managing device. WZC Started manually.")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]WZC Already Running")
-					EndIf
+					CheckService("WZCSVC")
 
 					;check XML profile files are ok
 					UpdateOutput("Configuring Wireless Profile...")
@@ -1139,16 +1154,7 @@ While 1
 					EndIf
 
 					$XMLProfile = FileRead($xmlfile)
-				EndIf
 
-
-
-
-				;Certificate install
-				If ($use_cert == 1) Then SetCert()
-
-				;------------------------------------------------------------------------------------------------------WIRELESS CONFIG
-				if ($wireless == 1) Then
 					if ($run_already < 1) Then
 						$hClientHandle = _Wlan_OpenHandle()
 						$Enum = _Wlan_EnumInterfaces($hClientHandle)
@@ -1316,21 +1322,7 @@ While 1
 				if ($nap == 1) Then
 					DoDebug("[setup]Enabling NAP")
 					;Check if the NAP Agent service is running.
-					If IsServiceRunning("napagent") == 0 Then
-						DoDebug("[setup]NAP Agent not running")
-						;Set NAP Agent Service to run automatically
-						Run("sc config napagent start= auto", "", @SW_HIDE)
-						;Start the NAP Agent Service
-						RunWait("net start napagent", "", @SW_HIDE)
-						;Set NAPAgentOn to 1 so we know that napagent had to be started
-						$NAPAgentOn = 1
-						UpdateOutput("NAP Agent started.")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]NAP Agent Running")
-						UpdateOutput("NAP Agent already started.")
-					EndIf
-
+					CheckService("napagent")
 					;enable Wireless EAPOL NAP client enfrocement
 					$cmd = "netsh nap client set enforcement id=79620 admin=enable"
 					UpdateProgress(5);
@@ -1350,19 +1342,7 @@ While 1
 
 				If ($wireless == 1) Then
 					;Check if the Wireless Zero Configuration Service is running.  If not start it.
-					If IsServiceRunning("WLANSVC") == 0 Then
-						DoDebug("[setup]WLANSVC not running")
-						;Set Wireless Zero Configuration Service to run automatically
-						Run("sc config WLANSVC start= auto", "", @SW_HIDE)
-						;Start the Wireless Zero Configuration Service
-						RunWait("net start WLANSVC", "", @SW_HIDE)
-						;Set $WZCSVCStarted to 1 so we know that WZCSVC had to be started
-						$WZCSVCStarted = 1
-						UpdateOutput("****** Possible supplicant already managing device. WZC Started manually.")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]WLANSVC Running")
-					EndIf
+					CheckService("WLANSVC")
 
 					UpdateOutput("Configuring Wireless Profile...")
 					UpdateProgress(10);
@@ -1585,20 +1565,7 @@ While 1
 				if ($nap == 1) Then
 					DoDebug("[setup]Enabling NAP")
 					;Check if the NAP Agent service is running.
-					If IsServiceRunning("napagent") == 0 Then
-						DoDebug("[setup]nap agent not running")
-						;Set NAP Agent Service to run automatically
-						Run("sc config napagent start= auto", "", @SW_HIDE)
-						;Start the NAP Agent Service
-						RunWait("net start napagent", "", @SW_HIDE)
-						;Set NAPAgentOn to 1 so we know that napagent had to be started
-						$NAPAgentOn = 1
-						UpdateOutput("NAP Agent started.")
-						UpdateProgress(5);
-					Else
-						DoDebug("[setup]NAP Agent Running")
-						UpdateOutput("NAP Agent already started.")
-					EndIf
+					CheckService("napagent")
 
 					;enable EAP NAP client enfrocement
 					$cmd = "netsh nap client set enforcement id=79623 admin=enable"
@@ -1722,20 +1689,12 @@ While 1
 			;vista and win 7 specific checks
 			If (StringInStr(@OSVersion, "7", 0) Or StringInStr(@OSVersion, "VISTA", 0)) Then
 				;Check if the Wireless Zero Configuration Service is running.  If not start it.
-				If IsServiceRunning("WLANSVC") == 0 Then
-					$WZCSVCStarted = 0
-				Else
-					$WZCSVCStarted = 1
-				EndIf
+				$WZCSVCStarted = IsServiceRunning("WLANSVC")
 			Else
 				;ASSUME XP
 				;***************************************
 				;win XP specific checks
-				If IsServiceRunning("WZCSVC") == 0 Then
-					$WZCSVCStarted = 0
-				Else
-					$WZCSVCStarted = 1
-				EndIf
+				$WZCSVCStarted = IsServiceRunning("WZCSVC")
 			EndIf
 			If ($WZCSVCStarted) Then
 				UpdateOutput("Wireless Service OK")
@@ -2251,28 +2210,12 @@ While 1
 
 			If (StringInStr(@OSVersion, "7", 0) Or StringInStr(@OSVersion, "VISTA", 0)) Then
 				;Check if the Wireless Zero Configuration Service is running.  If not start it.
-				If IsServiceRunning("WLANSVC") == 0 Then
-					$WZCSVCStarted = 0
-				Else
-					$WZCSVCStarted = 1
-				EndIf
+				CheckService("WLANSVC")
 			Else
 				;ASSUME XP
 				;***************************************
 				;win XP specific checks
-				If IsServiceRunning("WZCSVC") == 0 Then
-					$WZCSVCStarted = 0
-				Else
-					$WZCSVCStarted = 1
-				EndIf
-			EndIf
-
-			;Check that serviec running before disconnect
-			If ($WZCSVCStarted) Then
-				;UpdateOutput("Wireless Service OK")
-			Else
-				UpdateOutput("***Wireless Service Problem")
-				ExitLoop
+				CheckService("WZCSVC")
 			EndIf
 
 			if ($run_already > 0) Then
@@ -2408,31 +2351,13 @@ While 1
 			DoDebug("[reauth]Disconnecting wifi to retry auth")
 			If (StringInStr(@OSVersion, "7", 0) Or StringInStr(@OSVersion, "VISTA", 0)) Then
 				;Check if the Wireless Zero Configuration Service is running.  If not start it.
-				If IsServiceRunning("WLANSVC") == 0 Then
-					$WZCSVCStarted = 0
-				Else
-					$WZCSVCStarted = 1
-				EndIf
+				CheckService("WLANSVC")
 			Else
 				;ASSUME XP
 				;***************************************
 				;win XP specific checks
-				If IsServiceRunning("WZCSVC") == 0 Then
-					$WZCSVCStarted = 0
-				Else
-					$WZCSVCStarted = 1
-				EndIf
+				CheckService("WZCSVC")
 			EndIf
-
-			;Check that serviec running before disconnect
-			If ($WZCSVCStarted) Then
-				;UpdateOutput("Wireless Service OK")
-			Else
-				UpdateOutput("***Wireless Service Problem")
-				$argument1 = "fail"
-				ExitLoop
-			EndIf
-
 			if ($run_already > 0) Then
 				_Wlan_EndSession(-1)
 			EndIf
