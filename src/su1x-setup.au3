@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.9
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.10
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -671,7 +671,7 @@ Func doHint()
 		If $msg2 == $finish Then ExitLoop
 	WEnd
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>DoHint
+EndFunc   ;==>doHint
 
 ;Problem submission window
 Func doGetHelpInfo()
@@ -859,7 +859,7 @@ Func setScheduleTask()
 		DoDebug("Scheduled Task:" & $st_result)
 		;schtasks.exe /create /tn "su1x-auth-start-tool" /xml "f:\eduroam tool\event triggers\su1x-auth-start-orig.xml"
 	EndIf
-EndFunc   ;==>SetScheduleTask
+EndFunc   ;==>setScheduleTask
 
 Func alreadyRunning()
 	;kill windows sup gui first
@@ -928,8 +928,17 @@ Func alreadyRunning()
 		EndIf
 	EndIf
 
-EndFunc   ;==>AlreadyRunning
+EndFunc   ;==>alreadyRunning
 
+;Function to check isf admin
+Func CheckAdmin()
+	#RequireAdmin
+	If Not (IsAdmin()) Then
+		MsgBox(16, "Insufficient Privileges", "Administrative rights are required.")
+		Exit
+	EndIf
+	Return 1
+EndFunc   ;==>CheckAdmin
 
 
 
@@ -937,6 +946,7 @@ EndFunc   ;==>AlreadyRunning
 ;---------GUI code
 ;------------------------------------------------------------------------------------------------------------
 DoDebug("***Starting SU1X***")
+CheckAdmin()
 alreadyRunning()
 GUICreate($title, 294, 310)
 GUISetBkColor(0xffffff) ;---------------------------------white
@@ -1091,15 +1101,7 @@ While 1
 			If $os == "xp" Then
 				UpdateOutput("Detected Windows XP")
 				CloseWindows()
-
-
 				UpdateProgress(10);
-
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
-
 
 				;Certificate install
 				If ($use_cert == 1) Then SetCert()
@@ -1305,16 +1307,6 @@ While 1
 			Else
 				;VISTA / 7 CODE**************************************************************************************************************
 				UpdateOutput("Detected " & $os)
-				#RequireAdmin
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
-
-				If ($wireless == 1) Then
-
-				EndIf
-
 
 				;Certificate install
 				If ($use_cert == 1) Then SetCert()
@@ -1557,27 +1549,6 @@ While 1
 			;vist or xp check
 			;Check OS version
 			$output = ""
-			If (StringInStr(GetOSVersion(), "VISTA", 0)) Then
-				$os = "vista"
-				#RequireAdmin
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
-			EndIf
-
-			If (StringInStr(GetOSVersion(), "7", 0)) Then
-				$os = "win7"
-				#RequireAdmin
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
-			EndIf
-
-			If (StringInStr(GetOSVersion(), "XP", 0)) Then
-				$os = "xp"
-			EndIf
 
 			if (StringLen($SSID_Fallback) > 0 And $msg == $gethelp) Then
 				DoDebug("***GET HELP***")
@@ -1617,6 +1588,7 @@ While 1
 
 			;-------------------------------------------------------------------------GET OS INFO
 			$osinfo = @OSVersion & ":" & @OSServicePack & ":" & @OSLang
+			$os = GetOSVersion()
 			$compname = @ComputerName
 			$arch = @CPUArch & @OSArch
 			$ip1 = @IPAddress1
@@ -1639,7 +1611,7 @@ While 1
 			;-------------------------------------------------------------------------GET WIFI INFO
 			;***************************************
 			;vista and win 7 specific checks
-			If (StringInStr(@OSVersion, "7", 0) Or StringInStr(@OSVersion, "VISTA", 0)) Then
+			If (StringInStr(GetOSVersion(), "7", 0) Or StringInStr(GetOSVersion(), "vista", 0)) Then
 				;Check if the Wireless Zero Configuration Service is running.  If not start it.
 				$WZCSVCStarted = IsServiceRunning("WLANSVC")
 			Else
@@ -1866,29 +1838,11 @@ While 1
 
 				EndIf
 
-
-
-				;DoDebug("here")
 				;end if for ip length
 			EndIf
 			;********************************************************
 			;end code
 			;********************************************************
-			;DoDebug("[support]user=" &$user)
-			;DoDebug("[support]pass=" &$pass)
-			;DoDebug("[support]os="&$os)
-			;DoDebug("[support]compName=" & $compname)
-			;DoDebug("[support]arch=" & $arch)
-			;DoDebug("[support]ip=" &$ip1)
-			;DoDebug("[support]ip2=" &$ip2)
-			;DoDebug("[support]date=" &$date)
-			;DoDebug("[support]OSUser=" &$osuser)
-			;DoDebug("[support]Wifi service="&$WZCSVCStarted)
-			;DoDebug("[support]Wifi Card="&$wifi_card)
-			;DoDebug("[support]Wifi adapter="&$wifi_adapter)
-			;DoDebug("[support]Wifi state="&$wifi_state)
-			DoDebug("[support]LDAP Test:" & $response)
-
 
 			DoDump("****SU1X Dump of Support Data****")
 			DoDump("****date = " & @YEAR & @MON & @MDAY & @HOUR & @MIN & @SEC)
@@ -1910,9 +1864,9 @@ While 1
 			DoDump("Hardware Ver=" & $HardwareVersion)
 			DoDump("****Support Checks Output****")
 			DoDump("Data Send=" & $output)
+			DoDebug("[support]LDAP Test:" & $response)
 			$cmd = "netsh wlan show all > " & @WindowsDir & "\tracing\showall.txt"
 			;DoDebug("cmd=" & $cmd)
-			;$result = RunWait($cmd, @SW_HIDE)
 			$result = RunWait(@ComSpec & " /c " & $cmd, "", @SW_HIDE)
 			;$netshResult=StdoutRead($result)
 			;*****************************************************
@@ -1938,7 +1892,6 @@ While 1
 			;end code
 			;********************************************************
 
-			;_Wlan_EndSession(-1)
 			if (StringInStr($output, "[FAIL]")) Then
 				$output &= @CRLF & "A problem has been detected."
 				TrayTip("Problem Detected", $output, 30, 3)
@@ -1962,12 +1915,6 @@ While 1
 
 		;***************************************************************************************REMOVE EDUROAM
 		If $msg == $remove_wifi Then
-			#RequireAdmin
-			If 0 = IsAdmin() Then
-				MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-				Exit
-			EndIf
-
 			;if wireless
 			if ($wireless == 1) Then
 				if (Not (WlanAPIConnect())) Then
@@ -1991,8 +1938,6 @@ While 1
 					Next
 				EndIf
 				;remove scheduled task
-				#RequireAdmin
-				;install scheduled task
 				$stresult = RunWait(@ComSpec & " /c " & "schtasks.exe /delete /tn ""su1x-auth-start-tool"" /F", "", @SW_HIDE)
 				$st_result = StdoutRead($stresult)
 				DoDebug("Scheduled Task removed:" & $st_result)
@@ -2048,23 +1993,18 @@ While 1
 
 		;***************************************************************************************ADD PRINTER
 		If $msg == $print Then
-			#RequireAdmin
-			If 0 = IsAdmin() Then
-				MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-				Exit
-			EndIf
 
 			Dim $printer_model
 
-			If (StringInStr(@OSVersion, "VISTA", 0)) Then
+			If (StringInStr(GetOSVersion(), "vista", 0)) Then
 				$printer_model = $printer_vista
 			EndIf
 
-			If (StringInStr(@OSVersion, "7", 0)) Then
+			If (StringInStr(GetOSVersion(), "7", 0)) Then
 				$printer_model = $printer_7
 			EndIf
 
-			If (StringInStr(@OSVersion, "XP", 0)) Then
+			If (StringInStr(GetOSVersion(), "XP", 0)) Then
 				$printer_model = $printer_xp
 			EndIf
 
@@ -2088,12 +2028,6 @@ While 1
 
 		;***************************************************************************************REMOVE PRINTER
 		If $msg == $remove_printer Then
-			#RequireAdmin
-			If 0 = IsAdmin() Then
-				MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-				Exit
-			EndIf
-
 			$progress_meter = 0;
 			UpdateOutput("***Removing Printer***")
 			UpdateProgress(20);
@@ -2104,7 +2038,6 @@ While 1
 			$print_result = StdoutRead($result)
 			UpdateOutput("***Printer Removed***")
 			UpdateProgress(40);
-
 			;code to remove proxy settings also maybe?
 		EndIf
 		;***************************************************************************************REMOVE PRINTER
@@ -2112,11 +2045,6 @@ While 1
 		;***************************************************************************************TRY TO CONNECT
 		If $msg == $tryconnect Then
 			DoDebug("***TRY TO REAUTH***")
-			#RequireAdmin
-			If 0 = IsAdmin() Then
-				MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-				Exit
-			EndIf
 			$progress_meter = 0;
 			UpdateProgress(0);
 			UpdateOutput("***Trying to Connect to:" & $SSID & "***")
@@ -2144,7 +2072,7 @@ While 1
 
 			UpdateProgress(10)
 
-			If (StringInStr(@OSVersion, "7", 0) Or StringInStr(@OSVersion, "VISTA", 0)) Then
+			If (StringInStr(GetOSVersion(), "7", 0) Or StringInStr(GetOSVersion(), "vista", 0)) Then
 				;Check if the Wireless Zero Configuration Service is running.  If not start it.
 				CheckService("WLANSVC")
 			Else
@@ -2262,6 +2190,7 @@ While 1
 		;***************************************************************************************TRY TO CONNECT
 
 		;***************************************************************************************MANAGE WIRELESS REAUTH
+		;This code runs once, then must reset $auth so it doesnt run again
 		If (StringInStr($argument1, "auth") > 0) Then
 			DoDebug("[reauth]Disconnecting wifi to retry auth")
 			If (StringInStr(@OSVersion, "7", 0) Or StringInStr(@OSVersion, "VISTA", 0)) Then
