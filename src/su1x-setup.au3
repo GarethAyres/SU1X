@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.8
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.9
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -514,7 +514,7 @@ Func Fallback_Connect()
 	;connect to fallback network for support funcs to work
 	If (StringLen($SSID_Fallback) > 0) Then
 		DoDebug("[fallback]connecting to fallback:" & $SSID_Fallback)
-		If (StringInStr(@OSVersion, "7", 0) Or StringInStr(@OSVersion, "VISTA", 0)) Then
+		If (StringInStr(GetOSVersion(), "win7", 0) Or StringInStr(GetOSVersion(), "vist", 0)) Then
 			;Check if the Wireless Zero Configuration Service is running.  If not start it.
 			CheckService("WLANSVC")
 		Else
@@ -525,10 +525,6 @@ Func Fallback_Connect()
 		;Check that serviec running before disconnect
 		WlanAPIConnect()
 		If (WlanAPICheck()) Then
-			;make sure windows can manage wifi card
-			DoDebug("[fallback]Setting windows to manage wifi")
-			;The "use Windows to configure my wireless network settings" checkbox - Needs to be enabled for many funtions to work
-			_Wlan_SetInterface($hClientHandle, $pGUID, 0, "Auto Config Enabled")
 			;check if already connected to fallback network
 			Sleep(1000)
 			$fallback_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 2)
@@ -600,14 +596,48 @@ Func Fallback_Connect()
 	EndIf
 EndFunc   ;==>Fallback_Connect
 
+;return OS string for use in XML file
+Func GetOSVersion()
+	Dim $os
+	Dim $sp = StringRight(@OSServicePack, 1)
+	Switch @OSVersion
+		Case "WIN_7"
+			$os = "win7"
+		Case "WIN_VISTA"
+			$os = "vista"
+		Case "WIN_XP", "WIN_XPe"
+			$os = "xp"
+			; we state to the *user* you need SP3 when really you can get away with SP2+KB918997
+			Switch $sp
+				Case 3
+					UpdateOutput("Found Service Pack 3")
+				Case 2
+					RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB918997", "Installed")
+					If @error Then
+						DoDebug("[setup] hotfix" & @error)
+						UpdateOutput("No Hotfix found")
+						ContinueCase
+					EndIf
+				Case 0 To 2
+					MsgBox(16, "Updates Needed", "You must have at least Service Pack 3 installed. Please run Windows Update.")
+					Exit
+			EndSwitch
+		Case Else
+			MsgBox(16, "Incompatible Operating System", "You need to be running at least Microsoft Windows XP")
+			Exit
+	EndSwitch
+
+	Return $os
+EndFunc   ;==>GetOSVersion
+
 ;Function to load user hint window after a connection attempt
 Func doHint()
-	if ($os == "xp") Then
+	if (GetOSVersion() == "xp") Then
 		$y = 200
 		$y2 = 50
 		$y3 = 18
 	EndIf
-	if ($os == "vista" Or $os == "win7") Then
+	if (GetOSVersion() == "vista" Or GetOSVersion() == "win7") Then
 		$y = 120
 		$y2 = 0
 		$y3 = 0
@@ -615,23 +645,23 @@ Func doHint()
 	GUICreate("Configuration Successful", 400, 250 + $y + $y2, 50, 20)
 	GUISetState(@SW_SHOW)
 	GUICtrlCreateLabel($SSID & " configuration was successful!" & @CRLF & @CRLF & "1) Watch for the network connection icon in the bottom right of your screen. " & @CRLF & @CRLF & " This could take a couple of seconds to change.", 5, 5)
-	if ($os == "xp") Then
+	if (GetOSVersion() == "xp") Then
 		GUICtrlCreatePic($bubble_xp_connected, 15, 80, 344, 100)
 	EndIf
-	if ($os == "vista") Then
+	if (GetOSVersion() == "vista") Then
 		GUICtrlCreatePic($vista_connected, 15, 80, 33, 30)
 	EndIf
-	if ($os == "win7") Then
+	if (GetOSVersion() == "win7") Then
 		GUICtrlCreatePic($win7_connected, 15, 80, 56, 44)
 	EndIf
 	GUICtrlCreateLabel("If you seen the image above, you are successfully connected!", 5, $y)
 	GUICtrlCreateLabel("Please click Finish and exit the tool", 5, $y + 20)
 	;Watch for the bubble (As shown in the image below) to appear in the" & @CRLF & "System Tray near the clock.
 	GUICtrlCreateLabel("2) If a bubble appears like the image below, click it." & @CRLF & @CRLF & "3) When prompted, enter your username (e.g. " & $username & ") and" & @CRLF & "   password but Leave the ""Logon domain"" field blank." & @CRLF & @CRLF & "4) Click ""OK"" on the ""Enter Credentials"" window", 5, $y + 40)
-	if ($os == "xp") Then
+	if (GetOSVersion() == "xp") Then
 		GUICtrlCreatePic($bubblexp, 15, $y + 130, 373, 135)
 	EndIf
-	if ($os == "vista" Or $os = "win7") Then
+	if (GetOSVersion() == "vista" Or GetOSVersion() = "win7") Then
 		GUICtrlCreatePic($bubblevista, 15, $y + 130, 374, 59)
 	EndIf
 	$finish = GUICtrlCreateButton("Finish", 150, $y + $y2 + $y3 + 200, 100, 25)
@@ -1034,25 +1064,7 @@ While 1
 
 			Local $probconnect = 0
 
-			;Check OS version
-			If (StringInStr(@OSVersion, "VISTA", 0)) Then
-				$os = "vista"
-				#RequireAdmin
-			EndIf
-
-			If (StringInStr(@OSVersion, "7", 0)) Then
-				$os = "win7"
-				#RequireAdmin
-				If 0 = IsAdmin() Then
-					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
-					Exit
-				EndIf
-			EndIf
-
-			If (StringInStr(@OSVersion, "XP", 0)) Then
-				$os = "xp"
-				$sp = 0
-			EndIf
+			$os = GetOSVersion()
 
 			If ($showup > 0) Then
 				;read in username and password
@@ -1079,57 +1091,7 @@ While 1
 			If $os == "xp" Then
 				UpdateOutput("Detected Windows XP")
 				CloseWindows()
-				UpdateProgress(10);
-				;Check for Service Pack 2
-				If @OSServicePack == "Service Pack 2" Then
-					UpdateOutput("Found Service Pack 2")
-					;use xml file with no valid cert setup
-					$xmlfile = $xmlfilexpsp2
-					;Check if hotfix already installed
-					RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB918997", "Installed")
-					If @error Then
-						DoDebug("[setup] hotfix" & @error)
-						UpdateOutput("No Hotfix found")
-						;run hotfix
-						If (MsgBox(16, "Windows Update", "The Microsoft update Service Pack 3 is required for this tool to work. Please run Windows Updates or visit http://update.microsoft.com in order to get the updates. You will then need to rerun the tool.") == 6) Then
-							$msxml = DllOpen("msxml6.dll")
-							if ($msxml = -1) Then
-								UpdateOutput("No MSXML 6 found")
-								UpdateOutput("Exiting as Windows Updates are required.")
-								ExitLoop
-								;install it
-								;RunWait("msiexec /qn /i msxml6.msi")
-								;RunWait("msiexec /i msxml6.msi")
-								;UpdateOutput("msxml6 instlalled")
-							EndIf
-							;UpdateOutput("Installing hot fix. Please wait...")
-							;ShellExecuteWait("WindowsXP-KB918997-v6-x86-ENU.exe","/quiet /norestart")
-							;ShellExecuteWait("WindowsXP-KB918997-v6-x86-ENU.exe","/norestart")
-							;	UpdateOutput("installed hotfix")
-						Else
-							Exit
-						EndIf
-						;Once update installed reboot required
-						;If (MsgBox(4,"Reboot","Update installed! You must now restart and rerun the tool.")== 6) Then
-						;	shutdown(2)
-						;	Else
-						;	MsgBox(16,"Exiting","Setup is now exiting. Please rerun this tool once you have rebooted")
-						;	Exit
-						;	EndIf
-					Else
-						UpdateOutput("Hotfix already instaled")
-					EndIf
-					$sp = 2
-				EndIf
-				;Check for Service Pack 3
-				If @OSServicePack == "Service Pack 3" Then
-					UpdateOutput("Found Service Pack 3")
-					$sp = 3
-				EndIf
-				If $sp == 0 Then
-					MsgBox(16, "Updates Needed", "You must have at least Service Pack 2 installed. Please run Windows Update.")
-					Exit
-				EndIf
+
 
 				UpdateProgress(10);
 
@@ -1342,7 +1304,7 @@ While 1
 				;END OF XP CODE**********************************************************************************************************
 			Else
 				;VISTA / 7 CODE**************************************************************************************************************
-				UpdateOutput("Detected " & $os & "/7")
+				UpdateOutput("Detected " & $os)
 				#RequireAdmin
 				If 0 = IsAdmin() Then
 					MsgBox(16, "Insufficient Privileges", "Administrative rights are required. Please contact IT Support.")
@@ -1595,7 +1557,7 @@ While 1
 			;vist or xp check
 			;Check OS version
 			$output = ""
-			If (StringInStr(@OSVersion, "VISTA", 0)) Then
+			If (StringInStr(GetOSVersion(), "VISTA", 0)) Then
 				$os = "vista"
 				#RequireAdmin
 				If 0 = IsAdmin() Then
@@ -1604,7 +1566,7 @@ While 1
 				EndIf
 			EndIf
 
-			If (StringInStr(@OSVersion, "7", 0)) Then
+			If (StringInStr(GetOSVersion(), "7", 0)) Then
 				$os = "win7"
 				#RequireAdmin
 				If 0 = IsAdmin() Then
@@ -1613,7 +1575,7 @@ While 1
 				EndIf
 			EndIf
 
-			If (StringInStr(@OSVersion, "XP", 0)) Then
+			If (StringInStr(GetOSVersion(), "XP", 0)) Then
 				$os = "xp"
 			EndIf
 
