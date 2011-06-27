@@ -510,7 +510,7 @@ Func WlanAPICheck()
 EndFunc   ;==>WlanAPICheck
 
 
-Func Fallback_Connect()
+Func FallbackConnect()
 	;connect to fallback network for support funcs to work
 	If (StringLen($SSID_Fallback) > 0) Then
 		DoDebug("[fallback]connecting to fallback:" & $SSID_Fallback)
@@ -594,7 +594,7 @@ Func Fallback_Connect()
 		DoDebug("No fallback network")
 
 	EndIf
-EndFunc   ;==>Fallback_Connect
+EndFunc   ;==>FallbackConnect
 
 ;return OS string for use in XML file
 Func GetOSVersion()
@@ -671,7 +671,7 @@ Func doHint()
 		If $msg2 == $finish Then ExitLoop
 	WEnd
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>doHint
+EndFunc   ;==>DoHint
 
 ;Problem submission window
 Func doGetHelpInfo()
@@ -686,7 +686,7 @@ Func doGetHelpInfo()
 		If $msg2 == $finish Then ExitLoop
 	WEnd
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>doGetHelpInfo
+EndFunc   ;==>DoGetHelpInfo
 
 
 ;Checks if a specified service is running.
@@ -859,7 +859,7 @@ Func setScheduleTask()
 		DoDebug("Scheduled Task:" & $st_result)
 		;schtasks.exe /create /tn "su1x-auth-start-tool" /xml "f:\eduroam tool\event triggers\su1x-auth-start-orig.xml"
 	EndIf
-EndFunc   ;==>setScheduleTask
+EndFunc   ;==>SetScheduleTask
 
 Func alreadyRunning()
 	;kill windows sup gui first
@@ -928,7 +928,7 @@ Func alreadyRunning()
 		EndIf
 	EndIf
 
-EndFunc   ;==>alreadyRunning
+EndFunc   ;==>AlreadyRunning
 
 
 
@@ -1583,7 +1583,7 @@ While 1
 				DoDebug("***GET HELP***")
 				UpdateOutput("***Connecting to fallback:" & $SSID_Fallback & "***")
 				UpdateProgress(20)
-				Fallback_Connect()
+				FallbackConnect()
 			EndIf
 
 			UpdateProgress(10);
