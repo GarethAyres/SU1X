@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.10
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.11
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -229,6 +229,8 @@ Dim $filename
 Dim $num_arguments = 0
 Dim $tryconnect = "no"
 Dim $probdesc = "none"
+Dim $userbutton
+Dim $passbutton
 Global $hClientHandle = 0
 Global $pGUID = 0
 Global $Enum[3][3]
@@ -686,7 +688,7 @@ Func doGetHelpInfo()
 		If $msg2 == $finish Then ExitLoop
 	WEnd
 	GUISetState(@SW_HIDE)
-EndFunc   ;==>DoGetHelpInfo
+EndFunc   ;==>doGetHelpInfo
 
 
 ;Checks if a specified service is running.
@@ -940,6 +942,51 @@ Func CheckAdmin()
 	Return 1
 EndFunc   ;==>CheckAdmin
 
+Func SetEAPCred()
+	;*****************************SET  profile EAP credentials
+	If ($showup > 0) Then
+		;read in username and password
+		$user = GUICtrlRead($userbutton)
+		$pass = GUICtrlRead($passbutton)
+
+		;additional regex from ini maybe?
+
+		;check username
+		if (StringInStr($user, "123456") > 0 Or StringLen($user) < 1) Then
+			UpdateProgress(100)
+			UpdateOutput("ERROR: Please enter a username")
+			Return 0
+		EndIf
+
+		;check password
+		if (StringLen($pass) < 1) Then
+			UpdateProgress(100)
+			UpdateOutput("ERROR: Please enter a password")
+			Return 0
+		EndIf
+		Local $credentials[4]
+		$credentials[0] = "PEAP-MSCHAP" ; EAP method
+		$credentials[1] = "" ;domain
+		$credentials[2] = $user ; username
+		$credentials[3] = $pass ; password
+		DoDebug("[EAPCred]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID & $credentials[2])
+		$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
+		If @error Then
+			DoDebug("[EAPCred]Set credential error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
+			Return 0
+		EndIf
+		DoDebug("[EAPCred]Set Credentials=" & $credentials[2] & $credentials[3] & $setCredentials)
+		if ($tryadditional_profile == 1) Then
+			$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID_Additional, $credentials)
+			If @error Then
+				DoDebug("[EAPCred]Set credential additional error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
+				Return 0
+			EndIf
+			DoDebug("[EAPCred]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID_Additional & $credentials[2])
+		EndIf
+	EndIf
+	Return 1
+EndFunc   ;==>SetEAPCred
 
 
 ;------------------------------------------------------------------------------------------------------------
@@ -1076,25 +1123,6 @@ While 1
 
 			$os = GetOSVersion()
 
-			If ($showup > 0) Then
-				;read in username and password
-				$user = GUICtrlRead($userbutton)
-				$pass = GUICtrlRead($passbutton)
-
-				;check username
-				if (StringInStr($user, "123456") > 0 Or StringLen($user) < 1) Then
-					UpdateProgress(100)
-					UpdateOutput("ERROR: Please enter a username")
-					ExitLoop
-				EndIf
-
-				;check password
-				if (StringLen($pass) < 1) Then
-					UpdateProgress(100)
-					UpdateOutput("ERROR: Please enter a password")
-					ExitLoop
-				EndIf
-			EndIf
 
 			;**************************************************************************************************************
 			;Check OS then run appropriate code
@@ -1177,25 +1205,8 @@ While 1
 
 
 					;*****************************SET  profile EAP credentials
-					if ($showup > 0) Then
-						Local $credentials[4]
-						$credentials[0] = "PEAP-MSCHAP" ; EAP method
-						$credentials[1] = "" ;domain
-						$credentials[2] = $user ; username
-						$credentials[3] = $pass ; password
-						DoDebug("[setup]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID & $credentials[2])
-						$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
-						If @error Then
-							DoDebug("[setup]credential error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
-						EndIf
-						DoDebug("[setup]Set Credentials=" & $credentials[2] & $credentials[3] & $setCredentials)
-						if ($tryadditional_profile == 1) Then
-							$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID_Additional, $credentials)
-							If @error Then
-								DoDebug("[setup]credential additional error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
-							EndIf
-							DoDebug("[setup]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID_Additional & $credentials[2])
-						EndIf
+					if (Not (SetEAPCred())) Then
+						ExitLoop
 					EndIf
 
 					;set priority of new profile
@@ -1391,26 +1402,8 @@ While 1
 					EndIf
 
 					;*****************************SET  profile EAP credentials
-					if ($showup > 0) Then
-						Local $credentials[4]
-						$credentials[0] = "PEAP-MSCHAP" ; EAP method
-						$credentials[1] = "" ;domain
-						$credentials[2] = $user ; username
-						$credentials[3] = $pass ; password
-						DoDebug("[setup]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID & $credentials[2])
-						$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
-						If @error Then
-							DoDebug("[setup]credential error=" & @ScriptLineNumber & @error & @extended & $setCredentials)
-							UpdateOutput("User/Pass not set")
-						EndIf
-						DoDebug("[reauth]Set Credentials=" & $credentials[2] & $credentials[3] & $setCredentials)
-						if ($tryadditional_profile == 1) Then
-							$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID_Additional, $credentials)
-							If @error Then
-								DoDebug("[setup]credential additional error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
-							EndIf
-							DoDebug("[setup]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID_Additional & $credentials[2])
-						EndIf
+					if (Not (SetEAPCred())) Then
+						ExitLoop
 					EndIf
 
 					;set priority of new profile
@@ -2050,26 +2043,6 @@ While 1
 			UpdateOutput("***Trying to Connect to:" & $SSID & "***")
 			UpdateProgress(0);
 			;check profile set
-			;read in username and password
-			If ($showup > 0) Then
-				$user = GUICtrlRead($userbutton)
-				$pass = GUICtrlRead($passbutton)
-
-				;check username
-				if (StringInStr($user, "123456") > 0 Or StringLen($user) < 1) Then
-					UpdateProgress(100)
-					UpdateOutput("ERROR: Please enter a username")
-					ExitLoop
-				EndIf
-
-				;check password
-				if (StringLen($pass) < 1) Then
-					UpdateProgress(100)
-					UpdateOutput("ERROR: Please enter apassword")
-					ExitLoop
-				EndIf
-			EndIf
-
 			UpdateProgress(10)
 
 			If (StringInStr(GetOSVersion(), "7", 0) Or StringInStr(GetOSVersion(), "vista", 0)) Then
@@ -2106,25 +2079,8 @@ While 1
 				CloseConnectWindows()
 				Sleep(500)
 				;reset EAP credentials
-				if ($showup > 0) Then
-					Local $credentials[4]
-					$credentials[0] = "PEAP-MSCHAP" ; EAP method
-					$credentials[1] = "" ;domain
-					$credentials[2] = $user ; username
-					$credentials[3] = $pass ; password
-					DoDebug("[reauth]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID & $credentials[2])
-					$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID, $credentials)
-					If @error Then
-						DoDebug("[reauth]credential error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
-					EndIf
-					DoDebug("[reauth]Set Credentials=" & $credentials[2] & $credentials[3] & $setCredentials)
-					if ($tryadditional_profile == 1) Then
-						$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $SSID_Additional, $credentials)
-						If @error Then
-							DoDebug("[reauth]credential additional error:" & @ScriptLineNumber & @error & @extended & $setCredentials)
-						EndIf
-						DoDebug("[reauth]_Wlan_SetProfileUserData" & $hClientHandle & $pGUID & $SSID_Additional & $credentials[2])
-					EndIf
+				if (Not (SetEAPCred())) Then
+					ExitLoop
 				EndIf
 				UpdateProgress(30)
 				;set priority of new profile
