@@ -4,7 +4,7 @@
 	<SSIDConfig>
 		<SSID>
 			<hex>656475726F616D2D777061</hex>
-			<name>eduroam-wpa</name>
+			<name>eduroam</name>
 		</SSID>
 		<nonBroadcast>false</nonBroadcast>
 	</SSIDConfig>

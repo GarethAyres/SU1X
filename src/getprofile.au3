@@ -114,22 +114,22 @@ EndFunc   ;==>UpdateProgress
 Func GetOSVersion()
 	Select
 		Case StringInStr(@OSVersion, "VISTA", 0)
-			Return "WIN7"
+			Return "vista"
 		Case StringInStr(@OSVersion, "7", 0)
-			Return "WIN7"
+			Return "win7"
 		Case StringInStr(@OSVersion, "XP", 0)
 			If @OSServicePack == "Service Pack 2" Then
-				Return "XPSP2"
+				Return "xpsp2"
 			Else
-				Return "XP"
+				Return "xp"
 			EndIf
 	EndSelect
 EndFunc   ;==>GetOSVersion
 
 
 ;function to save a profile to a file
-Func SaveXMLProfile($name, $profile, $priority)
-	$filename = $name & "_" & GetOSVersion() & "_" & $priority & ".xml"
+Func SaveXMLProfile($name, $profile, $priority, $authentication)
+	$filename = @ScriptDir & "\profiles\" & $name & "_" & $authentication & "_" & GetOSVersion() & "_" & $priority & ".xml"
 	If (FileExists($filename)) Then
 		$backup_filename = $filename & ".backup"
 		DoDebug("File exists, Backing up and then deleting...")
@@ -143,7 +143,7 @@ EndFunc   ;==>SaveXMLProfile
 
 ;function to save the wired profile to a file
 Func SaveWiredXMLProfile($interface)
-	$filename = $interface & ".xml"
+	$filename = @ScriptDir & "\profiles\" & $interface & ".xml"
 	If (FileExists($filename)) Then
 		$backup_filename = $filename & ".backup"
 		DoDebug("File exists, Backing up and then deleting...")
@@ -275,6 +275,9 @@ While 1
 						For $numprofiles = 0 To UBound($profiles, 1) - 1
 							UpdateProgress(10);
 							$profile = _Wlan_GetProfileXML($hClientHandle, $pGUID, $profiles[$numprofiles])
+							Dim $profile_type[11]
+							$profile_type = _Wlan_GetProfile($hClientHandle, $pGUID, $profiles[$numprofiles])
+							Dim $authentication = $profile_type[3]
 							;$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanGetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID,"ptr", 0, "wstr*", 0, "ptr*", 0, "ptr*", 0)
 							if (@error) Then
 								DoDebug("No profile exists!")
@@ -285,7 +288,7 @@ While 1
 							EndIf
 							if ($DEBUG > 0) Then _ArrayDisplay($profile, "Details of profile captured")
 							UpdateProgress(10)
-							$output &= SaveXMLProfile($profiles[$numprofiles], $profile, $numprofiles) & " "
+							$output &= SaveXMLProfile($profiles[$numprofiles], $profile, $numprofiles, $authentication) & " "
 							UpdateProgress(10)
 						Next
 					EndIf
