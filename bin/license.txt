@@ -1,7 +1,0 @@
-******Swansea Eduroam Setup Tool License*******
-***
-This tool will configure your Windows OS to work with the Eduroam wireless network at Swansea UNiversity.
-
-The tool is provided without garuntee or warantty.
-
-Installing this tool will install a scheduled task which will run the wireless tool whenever there is a problem connecting to eduroam. Uninstalling the tool will remove this scheduled task.

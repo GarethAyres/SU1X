@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.12
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.13
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -37,65 +37,10 @@
 ;
 ;
 ;
-; Updated 10/12/10 - Gareth Ayres (g.j.ayres@swan.ac.uk)
+; Gareth Ayres (g.j.ayres@swan.ac.uk)
 ; To save time, makes use of wirelss API interface by MattyD (http://www.autoitscript.com/forum/index.php?showtopic=91018&st=0)
 ;
-; ****** Change log
-;
-; **24/06/2011
-;	Update of code to improve programming efficiency
-;	Renamed main file eduswan.au3 to suwx-setup.au3
-;
-;	Made use of code suggestions from Alexander van der Mey and Alexander Clouter
-;
-; **31/05/2011
-;	Changed cert install command to work with p7b files on request of david sullivan of barnet.ac.uk
-;
-; **24/05/2011
-;	Added fallback ssid support
-;	Added get help button
-;	Added scheduled task for reauth interception, with custom tab/button/checks
-;		Reauth interception only occurs if rauath doesnt connect automatically after 8 seconds
-;
-;
-; **16/05/2011
-;	Added support for sending problem reports to a web server
-;	Added support for sending ldap_login tests to a web server
-;	See web_support.txt for info on the web support options
-;
-; **29/01/2011
-;  Added support for multiple profile instalation
-;
-; **27/01/2011
-;  Added GUI display options
-;  Fixed bug with mac address lookup
-;  Fixed bug with getprofile and some wireless cards
-;
-;  **13/12/10
-;  Added Wired support for 802.1x profile on 802.3
-;  Wireless and/or Wired profiles can be configured
-;  Added netsh wlan show all output to debug=2 on support tab
-;  Fixed bug with wireless win7/vista multiple profile selection
-;  Added removal of wired profile on 802.3
-;  Fixed bug of mac address discovery on win7
-;
-;  **28/09/10
-;  Added popup debug output to file output.
-;
-;  **13/09/10
-;  Added text to describe username and password text fields
-;  Added tick box to show password
-;  Ammended proxy code for IE to fix problem with chineese laptops (provided by Adrian Simmons, York St Johns)
-;  Added code to turn on NAP/SoH
-;  Added windows vista/7 specific xml file to allow capture of seperate profiles for win7 and xp. xp need blob in xml,
-;				which is not mandatory in vista/7. This allows more conf optiosn in win7 profile.
-;  Debugs to file when checks turned on
-;  Added manifest to code manually to remove UAC/PAC errors/warnings
-;
-;
-;-------------------------------------------------------------------------
-;manifest infor for compiler, to help win 7 and vista execution
-;Adds require admin as requst level in manifest
+
 
 #include "Native_Wifi_Func_V3_3b.au3"
 #include <GUIConstants.au3>
