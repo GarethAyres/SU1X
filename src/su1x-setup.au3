@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.13
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.14
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -968,10 +968,8 @@ Func ConfigWireless($profilesXML)
 				Dim $theauth = $theprofile[1]
 				Dim $theos = $theprofile[2]
 				Dim $thepriority = StringTrimRight($theprofile[3], 4)
-				if (UBound($profilesXML) > 1) Then
-					; if more than one profile file, check os. else use the one profile for all os's
-					if (not (GetOSVersion() == $theos)) Then ExitLoop
-				EndIf
+				; if more than one profile file, check os. else use the one profile for all os's
+				If (UBound($profilesXML) > 1 And NOT (GetOSVersion() == $theos)) Then ContinueLoop
 				DoDebug("[ConfigWireless]Setting profile " & $thessid & " with auth=" & $theauth)
 				Dim $profile_result = SetWirelessProfile($XMLProfile, $thessid, $thepriority, $theauth)
 				if (NOT ($profile_result)) Then
