@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.14
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.15
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -164,6 +164,7 @@ Dim $tryconnect = "no"
 Dim $probdesc = "none"
 Dim $userbutton
 Dim $passbutton
+Dim $remove_wifi_arg = 0
 Global $hClientHandle = 0
 Global $pGUID = 0
 Global $Enum
@@ -854,6 +855,10 @@ Func alreadyRunning()
 				EndIf
 			EndIf
 		EndIf
+	EndIf
+
+	If (StringInStr($argument1, "remove") > 0) Then
+		$remove_wifi_arg = 1
 	EndIf
 
 EndFunc   ;==>alreadyRunning
@@ -1668,7 +1673,7 @@ While 1
 		EndIf
 
 		;***************************************************************************************REMOVE EDUROAM
-		If $msg == $remove_wifi Then
+		If ($msg == $remove_wifi Or $remove_wifi_arg == 1) Then
 			;if wireless
 			if ($wireless == 1) Then
 				if (Not (WlanAPIConnect())) Then
@@ -1726,8 +1731,13 @@ While 1
 				UpdateProgress(10);
 				if ($networkcount < 1) Then UpdateOutput("No devices found to remove profile")
 			EndIf
-
+			TrayTip("Removed " & $SSID, "Tool and wireless networks removed", 30, 3)
 			UpdateProgress(100);
+			if ($remove_wifi_arg == 1) Then
+				Sleep(1000)
+				Exit
+			EndIf
+			$remove_wifi_arg = 0
 			;code to remove proxy settings also maybe?
 		EndIf
 		;***************************************************************************************REMOVE EDUROAM

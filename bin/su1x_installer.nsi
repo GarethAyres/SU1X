@@ -4,7 +4,7 @@
 
 ; -------------------------------
 ; Start
-  !define MUI_PRODUCT "Eduroam Setup Tool"
+  !define MUI_PRODUCT "Eduroam Tool"
   !define MUI_FILE "su1x-setup"
   !define MUI_VERSION ""
   !define MUI_BRANDINGTEXT "Eduroam @ Swansea"
@@ -56,20 +56,20 @@ Section "Eduroam @ Swansea" install
 
 ;Add files
   SetOutPath "$INSTDIR"
-
   File "${MUI_FILE}.exe"
   File "config.ini"
   File "license.txt"
-  File "ReadMe.txt"
-  File "Wired_Profile.xml"
-  File "Profile.xml"
   File "CertMgr.Exe"
   File "su1x-auth-task.xml"
   File "su1x-setup.exe"
   File "swansea.ico"
-  File "wireless.xml"
-  File "wireless-wpa2.xml"
   File "CamfordCA.der"
+  CreateDirectory "profiles\"
+  SetOutPath "$INSTDIR\profiles"
+  File "profiles\Wired_Profile.xml"
+  File "profiles\eduroam_WPA2_win7_0.xml"
+  SetOutPath "$INSTDIR"
+  CreateDirectory "images\"
   SetOutPath "$INSTDIR\images"
   File "images\lis-header.jpg"
   File "images\bubble-connected-xp.jpg"
@@ -77,6 +77,7 @@ Section "Eduroam @ Swansea" install
   File "images\connected-vista.jpg"
   File "images\jrs-header.jpg"
   File "images\bubble-vista.jpg"
+
 
 ;create desktop shortcut
   CreateShortCut "$DESKTOP\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_FILE}.exe" "$INSTDIR\${MUI_ICON}" ""
@@ -94,6 +95,11 @@ Section "Eduroam @ Swansea" install
 
 SectionEnd
 
+;--------------------------------
+;Installer Sections
+;Section /o "Swansea Web Portal" web
+;	Exec '"$INSTDIR\setHomePage.exe"'
+;SectionEnd
 
 ;--------------------------------
 ;Uninstaller Section
@@ -117,6 +123,16 @@ Section "Uninstall"
 SectionEnd
 
 
+LangString DESC_Section1 ${LANG_ENGLISH} "The Eduroam SU1X tool."
+;LangString DESC_Section2 ${LANG_ENGLISH} "Set your homepage to the Wireless Portal Page. This page has quick links to Swansea services."
+
+!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+  !insertmacro MUI_DESCRIPTION_TEXT ${install} $(DESC_Section1)
+ ; !insertmacro MUI_DESCRIPTION_TEXT ${web} $(DESC_Section2)
+!insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+
+
 ;--------------------------------
 ;MessageBox Section
 
@@ -128,6 +144,11 @@ Function .onInstSuccess
 
 FunctionEnd
 
+  Function un.onInit
+    MessageBox MB_YESNO "This will uninstall ${MUI_PRODUCT} and wireless networks. Continue?" IDYES NoAbort
+      Abort ; causes uninstaller to quit.
+    NoAbort:	Exec '"$INSTDIR\${MUI_FILE}.exe" remove'
+  FunctionEnd
 
 Function un.onUninstSuccess
   MessageBox MB_OK "You have successfully uninstalled ${MUI_PRODUCT}."

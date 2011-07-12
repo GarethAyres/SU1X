@@ -1,5 +1,9 @@
 ; SU1X Change log
 ;
+; ** 11/07/2011
+;	Added a remove paramater to remove profile/schedule task on a uninstall by a uninstaller
+;	Uninstall now also removes installed wireless networks and wired networks
+;
 ; **29/06/2011
 ;	Changed the way wireless profiles are captured and handled
 ;	Can now use unlimited wireless profiles
