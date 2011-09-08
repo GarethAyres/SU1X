@@ -1,5 +1,9 @@
 ; SU1X Change log
 ;
+; ** 08/09/2011
+;	Fixed bug with getprofiles and wireless centrino not reporting as wifi cards
+;	Fixed bug with LAN card detection with 64bit win7 lan drivers
+;
 ; ** 11/07/2011
 ;	Added a remove paramater to remove profile/schedule task on a uninstall by a uninstaller
 ;	Uninstall now also removes installed wireless networks and wired networks

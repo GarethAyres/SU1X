@@ -9,6 +9,7 @@ Features now include:
 -Fallback SSID contorl for use with web checks
 -Fixed bug with PCA compatabillity warning in win7. see src/manifest.txt
 -Wired 802.1x capture and install
+-NSIS installer for easy distribution
 -More debugging
 -Automation of configuration of a PEAP wireless connection on XP(SP3),Vita and Win 7
 -Can set EAP credentials without additional user interaction (avoids tooltip bubble)

@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.15
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.16
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -247,14 +247,23 @@ Func ConfigWired1x()
 	;Get the mac address and network name
 	$ip = "localhost"
 	Dim $adapter = "";
-	$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\" & $ip & "\root\cimv2")
-	$colItems = $objWMIService.ExecQuery("SELECT * FROM Win32_NetworkAdapter", "WQL", 0x30)
+	$query = "SELECT * FROM Win32_NetworkAdapter WHERE " & _
+			"AdapterTypeID = 0 " & _
+			"AND " & _
+			"Manufacturer != 'Microsoft' " & _
+			"AND " & _
+			"NOT PNPDeviceID LIKE 'ROOT\\%'" & _
+			"AND " & _
+			"MACAddress IS NOT NULL"
+	$objWMIService = ObjGet("winmgmts:{impersonationLevel = impersonate}!\\localhost\root\cimv2")
+	$colItems = $objWMIService.ExecQuery($query, "WQL", 0x30)
 	Dim $networkcount = 0
 	UpdateProgress(20);
 	If IsObj($colItems) Then
 		For $objItem In $colItems
 			if ($objItem.AdapterType == "Ethernet 802.3") Then
-				if (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
+				if (StringInStr($objItem.netconnectionid, "Blue") == 0 And StringInStr($objItem.netconnectionid, "1394") == 0 And StringInStr($objItem.netconnectionid, "Wireless") == 0) Then
+					$adapter &= "*********************"
 					$adapter &= "Caption: " & $objItem.Caption & @CRLF
 					$adapter &= "Description: " & $objItem.Description & @CRLF
 					$adapter &= "Index: " & $objItem.Index & @CRLF
@@ -264,18 +273,20 @@ Func ConfigWired1x()
 					$adapter &= "Type: " & $objItem.AdapterType & @CRLF
 					;Ethernet 802.3
 					$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
-					$adapter &= "*********************"
 					DoDebug("[setup] Applying profile to :" & $adapter)
-					$adapter = ""
+					Dim $adapter = ""
 					$networkcount += 1
 					UpdateOutput("Configuring " & $objItem.netconnectionid)
 					$cmd = "netsh lan add profile filename=""" & $wired_xmlfile & """ interface=""" & $wired_interface & """"
 					DoDebug("[setup]802.3 command=" & $cmd)
 					RunWait($cmd, "", @SW_HIDE)
 					UpdateProgress(20);
+				Else
+					DoDebug("[setup] " & $objItem.netconnectionid & "( " & $objItem.AdapterType & "," & $objItem.Description & ") does no match as LAN")
 				EndIf
+			Else
+				DoDebug("[setup] No 802.3 adapter found (" & $objItem.Caption & "," & $objItem.Description & ") ")
 			EndIf
-			ExitLoop
 		Next
 	Else
 		DoDebug("[setup]No 802.3 Adapter found!")
@@ -1008,7 +1019,6 @@ EndFunc   ;==>ConfigWireless
 DoDebug("***Starting SU1X***")
 CheckAdmin()
 alreadyRunning()
-
 GUICreate($title, 294, 310)
 GUISetBkColor(0xffffff) ;---------------------------------white
 $n = GUICtrlCreatePic($BANNER, 0, 0, 294, 54) ;--------pic
@@ -1259,21 +1269,6 @@ While 1
 			EndIf
 
 			;END OF CONFIG CODE**********************************************************************************************************
-
-			;------------------------------------------------------------------------------------------------------WIRED CONFIG
-			if ($wired == 1) Then ConfigWired1x()
-
-			;------------------------------------------------------------------------------------------------------NAP/SoH CONFIG
-			;Enable NAP
-			if ($nap == 1) Then
-				DoDebug("[setup]Enabling NAP")
-				;Check if the NAP Agent service is running.
-				CheckService("napagent")
-				;enable EAP NAP client enfrocement
-				$cmd = "netsh nap client set enforcement id=79623 admin=enable"
-				UpdateProgress(5);
-				$result = RunWait($cmd, "", @SW_HIDE)
-			EndIf
 
 			;install scheduled task
 			if ($scheduletask == 1) Then

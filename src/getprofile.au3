@@ -195,8 +195,8 @@ If IsObj($colItems) Then
 		$adapter &= "Type: " & $objItem.AdapterType & @CRLF
 		$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
 		;DoDebug($adapter)
-		DoDebug("adapter = " & $objItem.NetConnectionID & "and desc = " & $objItem.Description)
-		if (StringInStr($objItem.description, "Wireless") Or StringInStr($objItem.description, "Wi") Or StringInStr($objItem.description, "802.11")) Then
+		DoDebug("adapter = " & $objItem.NetConnectionID & " and desc = " & $objItem.Description)
+		if (StringInStr($objItem.description, "Wireless") Or StringInStr($objItem.description, "Wi") Or StringInStr($objItem.description, "802.11") Or StringInStr($objItem.description, "Centrino")) Then
 			$wireless = " [wireless]"
 		Else
 			$wireless = " [wired]"
