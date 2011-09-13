@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.16
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.17
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -1234,21 +1234,23 @@ While 1
 							UpdateOutput($SSID & " authenticating...")
 						EndIf
 					Else
-						DoDebug("[setup]Connected")
-						UpdateOutput($SSID & "Failed... retrying... ")
+						DoDebug("[setup]Interface State Problem")
+						UpdateOutput($SSID & " Failed... retrying... ")
 					EndIf
 					Sleep(2000)
 					if ($loop_count > 7) Then ExitLoop
 					$loop_count = $loop_count + 1
 				WEnd
 
-				if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
-					if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
-						UpdateOutput("Connected but not yet got an IP Address...")
+				if (IsArray($retry_state)) Then
+					if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
+						if ((StringLen($ip1) == 0) OR (StringInStr($ip1, "169.254.") > 0) OR (StringInStr($ip1, "127.0.0") > 0)) Then
+							UpdateOutput("Connected but not yet got an IP Address...")
+						EndIf
+					Else
+						UpdateOutput("ERROR:Failed to connected.")
+						$probconnect = 1
 					EndIf
-				Else
-					UpdateOutput("ERROR:Failed to connected.")
-					$probconnect = 1
 				EndIf
 				UpdateProgress(10);
 				ConfigProxy()
