@@ -701,10 +701,13 @@ EndFunc   ;==>RemoveSSID
 ;sets the priority of a ssid profile
 Func SetPriority($hClientHandle, $pGUID, $thessid, $priority)
 	$setpriority = DllCall($WLANAPIDLL, "dword", "WlanSetProfilePosition", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $thessid, "dword", $priority, "ptr", 0)
+	DoDebug("[SetPriority] ssid=" & $thessid & " and priority=" & $priority)
 	if ($setpriority[0] > 0) Then
-		UpdateOutput("Error: Return code invalid for profile " & $thessid & " priority" & $priority)
+		UpdateOutput("Error: Return code invalid for profile " & $thessid & " priority " & $priority)
+		If $setpriority[0] Then DoDebug("[SetWirelessPriority]Error Msg=" & _Wlan_GetErrorMessage($setpriority[0]))
 		Return 0
 	EndIf
+	DoDebug("[SetPriority] Success ssid=" & $thessid & " and priority=" & $priority)
 	Return 1
 EndFunc   ;==>SetPriority
 
@@ -937,7 +940,25 @@ Func GetProfiles()
 			$count = $count + 1
 		WEnd
 		DoDebug("[GetProfiles]found " & UBound($profilesXML) & " config files")
-		Return $profilesXML
+		_ArraySort($profilesXML)
+		Dim $tempprofiles[1]
+		For $afilename In $profilesXML
+			if (StringInStr($afilename, "WPA2")) Then _ArrayAdd($tempprofiles, $afilename)
+		Next
+		For $afilename In $profilesXML
+			if (StringInStr($afilename, "WPA_")) Then _ArrayAdd($tempprofiles, $afilename)
+		Next
+		For $afilename In $profilesXML
+			if (StringInStr($afilename, "WPA2-PSK")) Then _ArrayAdd($tempprofiles, $afilename)
+		Next
+		For $afilename In $profilesXML
+			if (StringInStr($afilename, "WPA-PSK")) Then _ArrayAdd($tempprofiles, $afilename)
+		Next
+		For $afilename In $profilesXML
+			if (StringInStr($afilename, "_OPEN_")) Then _ArrayAdd($tempprofiles, $afilename)
+		Next
+		_ArrayDelete($tempprofiles, 0)
+		Return $tempprofiles
 		;get profiles
 	Else
 		DoDebug("[GetProfiles]No profiles dir found in script dir")
@@ -955,6 +976,7 @@ Func SetWirelessProfile($XMLProfile, $thessid, $priority, $theauth)
 		Return 0
 	Else
 		;set priority of new profile
+		Sleep(500)
 		SetPriority($hClientHandle, $pGUID, $thessid, $priority)
 		;*****************************SET  profile EAP credentials if a wpa or wpa2 enterprise network
 		if (StringCompare($theauth, "WPA") == 0 Or StringCompare($theauth, "WPA2") == 0) Then
@@ -974,27 +996,43 @@ Func ConfigWireless($profilesXML)
 		Dim $failcount = 0
 		;iterate through profiles
 		For $afilename In $profilesXML
+			Dim $tempafilename = _StringExplode($afilename, "\");
+			$afilename_orig = $afilename
+			$afilename = $tempafilename[UBound($tempafilename) - 1];
 			Dim $theprofile = _StringExplode($afilename, "_")
 			if (UBound($theprofile) == 4) Then
 				;looks like the correct file name type
-				Dim $XMLProfileFile = FileOpen($afilename)
+				Dim $XMLProfileFile = FileOpen($afilename_orig)
 				Dim $XMLProfile = FileRead($XMLProfileFile)
 				Dim $thessid_array = _StringExplode($theprofile[0], "\")
 				Dim $thessid = $thessid_array[UBound($thessid_array) - 1]
 				Dim $theauth = $theprofile[1]
 				Dim $theos = $theprofile[2]
 				Dim $thepriority = StringTrimRight($theprofile[3], 4)
+				Dim $setprofile = 0
 				; if more than one profile file, check os. else use the one profile for all os's
-				If (UBound($profilesXML) > 1 And NOT (GetOSVersion() == $theos)) Then ContinueLoop
-				DoDebug("[ConfigWireless]Setting profile " & $thessid & " with auth=" & $theauth)
-				Dim $profile_result = SetWirelessProfile($XMLProfile, $thessid, $thepriority, $theauth)
-				if (NOT ($profile_result)) Then
-					UpdateOutput("Error: Return code invalid for " & $thessid & " (" & $theauth & "). WPA2 not supportted?")
-					$failcount = $failcount + 1
+				;If (UBound($profilesXML) > 1 And NOT (GetOSVersion() == $theos)) Then ContinueLoop
+				If (UBound($profilesXML) == 1) Then
+					DoDebug("[ConfigWireless]Setting profile " & $thessid & " with auth=" & $theauth)
+					Dim $profile_result = SetWirelessProfile($XMLProfile, $thessid, $thepriority, $theauth)
+					$setprofile = 1
 				Else
-					UpdateOutput("Added Wireless Profile " & $thessid & " (" & $theauth & ")")
+					if (GetOSVersion() == $theos) Then
+						DoDebug("[ConfigWireless]Setting profile " & $thessid & " with auth=" & $theauth)
+						Dim $profile_result = SetWirelessProfile($XMLProfile, $thessid, $thepriority, $theauth)
+						$setprofile = 1
+					EndIf
+				EndIf
+				If $setprofile Then
+					if (NOT ($profile_result)) Then
+						UpdateOutput("Error: Return code invalid for " & $thessid & " (" & $theauth & "). WPA2 not supportted?")
+						$failcount = $failcount + 1
+					Else
+						UpdateOutput("Added Wireless Profile " & $thessid & " (" & $theauth & ")")
+					EndIf
 				EndIf
 			Else
+				DoDebug("Incorrrect profile found: " & $afilename)
 				;ignore it, wrong file name
 			EndIf
 		Next
