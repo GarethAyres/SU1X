@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.17
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.18
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -281,6 +281,7 @@ Func ConfigWired1x()
 					DoDebug("[setup]802.3 command=" & $cmd)
 					RunWait($cmd, "", @SW_HIDE)
 					UpdateProgress(20);
+					SetEAPCred("", 2, $wired_interface)
 				Else
 					DoDebug("[setup] " & $objItem.netconnectionid & "( " & $objItem.AdapterType & "," & $objItem.Description & ") does no match as LAN")
 				EndIf
@@ -887,12 +888,12 @@ Func CheckAdmin()
 	Return 1
 EndFunc   ;==>CheckAdmin
 
-Func SetEAPCred($aSSID)
+Func SetEAPCred($thessid, $inttype, $interface)
 	;*****************************SET  profile EAP credentials
 	If ($showup > 0) Then
 		;read in username and password
-		$user = GUICtrlRead($userbutton)
-		$pass = GUICtrlRead($passbutton)
+		Dim $user = GUICtrlRead($userbutton)
+		Dim $pass = GUICtrlRead($passbutton)
 
 		;additional regex from ini maybe?
 
@@ -914,14 +915,57 @@ Func SetEAPCred($aSSID)
 		$credentials[1] = "" ;domain
 		$credentials[2] = $user ; username
 		$credentials[3] = $pass ; password
-		DoDebug("[EAPCred]_Wlan_SetProfileUserData" & $hClientHandle & " " & $pGUID & " " & $aSSID & " " & $credentials[2])
-		$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $aSSID, $credentials)
-		If @error Then
-			DoDebug("[EAPCred]Set credential error:" & @ScriptLineNumber & @error & @extended & $setCredentials & $aSSID)
-			Return 0
+		;INTTYPE = 1 FOR WIRELESS EAP CRED
+		if ($inttype == 1) Then
+			DoDebug("[EAPCred]_Wlan_SetProfileUserData" & $hClientHandle & " " & $pGUID & " " & $thessid & " " & $credentials[2])
+			$setCredentials = _Wlan_SetProfileUserData($hClientHandle, $pGUID, $thessid, $credentials)
+			If @error Then
+				DoDebug("[EAPCred]Set credential error:" & @ScriptLineNumber & @error & @extended & $setCredentials & $thessid)
+				Return 0
+			EndIf
+		EndIf
+		;INTTYPE = 2 FOR WIRED EAP CRED
+		if ($inttype == 2) Then
+			$customeapxml = @ScriptDir & "\WiredEAPCredentials-custom.xml"
+			$stxml = FileOpen(@ScriptDir & "\WiredEAPCredentials.xml")
+
+			If ($stxml = -1) Then
+				DoDebug("ERROR opening Wired EAPCred XML File")
+			EndIf
+
+			If (FileExists(@ScriptDir & $customeapxml)) Then
+				FileDelete(@ScriptDir & $customeapxml)
+			EndIf
+			$newstxml = FileOpen($customeapxml, 1)
+			If ($newstxml = -1) Then
+				DoDebug("ERROR opening new Wired EAPCred XML File")
+			EndIf
+
+			While 1
+				$stline = FileReadLine($stxml)
+				If @error = -1 Then ExitLoop
+				if (StringInStr($stline, "Username") > 0) Then
+					FileWriteLine($newstxml, "<MsChapV2:Username>" & $user & "</MsChapV2:Username>")
+				ElseIf (StringInStr($stline, "Password") > 0) Then
+					FileWriteLine($newstxml, "<MsChapV2:Password>" & $pass & "</MsChapV2:Password>")
+				Else
+					FileWriteLine($newstxml, $stline)
+				EndIf
+			WEnd
+			FileClose($stxml)
+			FileClose($newstxml)
+
+			$cmd = "netsh lan set eapuserdata filename=""" & $customeapxml & """ allusers=yes interface=""" & $interface & """"
+			DoDebug("[setup]802.3 Set EAP Credentials command=" & $cmd)
+			$setCredentials = RunWait($cmd, "", @SW_HIDE)
+			UpdateProgress(20);
+			If (FileExists($customeapxml)) Then
+				FileDelete($customeapxml)
+			EndIf
 		EndIf
 		DoDebug("[EAPCred]Set Credentials Success=" & $credentials[2] & " " & $setCredentials)
 	EndIf
+
 	Return 1
 EndFunc   ;==>SetEAPCred
 
@@ -980,7 +1024,7 @@ Func SetWirelessProfile($XMLProfile, $thessid, $priority, $theauth)
 		SetPriority($hClientHandle, $pGUID, $thessid, $priority)
 		;*****************************SET  profile EAP credentials if a wpa or wpa2 enterprise network
 		if (StringCompare($theauth, "WPA") == 0 Or StringCompare($theauth, "WPA2") == 0) Then
-			if (Not (SetEAPCred($thessid))) Then
+			if (Not (SetEAPCred($thessid, 1, $pGUID))) Then
 				DoDebug("[SetWirelessProfile]Failed to set eap credentials for " & $thessid)
 				UpdateOutput("Failed to set username/password for " & $thessid)
 			EndIf
@@ -1872,7 +1916,7 @@ While 1
 				CloseConnectWindows()
 				Sleep(500)
 				;reset EAP credentials
-				if (Not (SetEAPCred($SSID))) Then
+				if (Not (SetEAPCred($SSID, 1, $pGUID))) Then
 					ExitLoop
 				EndIf
 				UpdateProgress(30)
