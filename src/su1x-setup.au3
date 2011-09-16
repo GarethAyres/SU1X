@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.18
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.19
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -691,6 +691,13 @@ Func CloseConnectWindows()
 		DoDebug("Closed Windows Security")
 		$winexist = True
 	EndIf
+	If WinExists("Click to provide additional information.") Then
+		;WinWaitClose("Network Connections","",15)
+		WinKill("Click to provide additional information.")
+		DoDebug("Closed Click to provide additional information.")
+		$winexist = True
+	EndIf
+
 	Return $winexist
 EndFunc   ;==>CloseConnectWindows
 
@@ -837,6 +844,7 @@ Func alreadyRunning()
 
 			While 1
 				;check if connected and got an ip
+				CloseConnectWindows()
 				$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
 				if (IsArray($retry_state) == 1) Then
 					if (StringCompare("Connected", $retry_state[0], 0) == 0) Then
@@ -1161,6 +1169,7 @@ GUISetState(@SW_SHOW)
 While 1
 	;two while loops so exitlooop can be used to escape button functions
 	While 1
+		CloseConnectWindows()
 		$msg = GUIGetMsg()
 		if ($showuptick > 0 And $showup > 0) Then
 			$checkbox = GUICtrlRead($showPass)
@@ -1283,12 +1292,14 @@ While 1
 				DoDebug("[setup]_Wlan_Connect has finished" & @CRLF)
 				UpdateProgress(10);
 				Sleep(1000)
+				CloseConnectWindows()
 				UpdateOutput("Wireless Profile added...")
 				Sleep(1500)
 				;check if connected, if not, connect to fallback network
 				Local $loop_count = 0
 				While 1
 					;check if connected and got an ip
+					CloseConnectWindows()
 					UpdateProgress(5)
 					$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
 					if (IsArray($retry_state)) Then
@@ -1331,6 +1342,7 @@ While 1
 						EndIf
 					Else
 						UpdateOutput("ERROR:Failed to connected.")
+						CloseConnectWindows()
 						$probconnect = 1
 					EndIf
 				EndIf
@@ -1364,6 +1376,8 @@ While 1
 			UpdateOutput("***Setup Complete***")
 			if ($probconnect > 0) Then
 				UpdateOutput("***POSSIBLE PROBLEM CONNECTING...")
+				CloseConnectWindows()
+				TrayTip($SSID & " Failed", "Check your username and password then click Start Setup again.", 30, 3)
 			EndIf
 			UpdateProgress(10);
 			GUICtrlSetData($progressbar1, 100)
@@ -1930,6 +1944,7 @@ While 1
 				Local $loop_count = 0
 				While 1
 					;check if connected and got an ip
+					CloseConnectWindows()
 					UpdateProgress(5)
 					$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
 					if (IsArray($retry_state)) Then
