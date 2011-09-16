@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.20
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.21
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -679,6 +679,8 @@ Func CloseWindows()
 EndFunc   ;==>CloseWindows
 
 Func CloseConnectWindows()
+	;first bring su1x to front
+	WinSetOnTop($title, "", 1)
 	$winexist = False
 	If WinExists("Connect to a Network") Then
 		;WinWaitClose("Network Connections","",15)
