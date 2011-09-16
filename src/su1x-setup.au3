@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.19
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.20
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -75,6 +75,7 @@ $progress_meter = 0
 $startText = IniRead($CONFIGFILE, "su1x", "startText", "SWIS")
 $title = IniRead($CONFIGFILE, "su1x", "title", "SWIS Eduroam - Setup Tool")
 $hint = IniRead($CONFIGFILE, "su1x", "hint", "0")
+$exitoncomplete = IniRead($CONFIGFILE, "su1x", "exit_on_complete", "0")
 $username = IniRead($CONFIGFILE, "su1x", "username", "123456@swansea.ac.uk")
 $proxy = IniRead($CONFIGFILE, "su1x", "proxy", "1")
 $browser_reset = IniRead($CONFIGFILE, "su1x", "browser_reset", "0")
@@ -1384,6 +1385,11 @@ While 1
 			if ($hint == 1 and ($probconnect > 0 Or $scheduletask == 0)) Then doHint()
 			;Setup all done, display hint if hint set and turn off splash if on
 			if ($USESPLASH == 1) Then SplashOff()
+			;exit tool on completiong if all successfull
+			if ($exitoncomplete == 1 And $probconnect == 0) Then
+				MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
+				Exit
+			EndIf
 		EndIf
 		;-------------------------------------------------------------------------
 		; All done...

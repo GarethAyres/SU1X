@@ -2,6 +2,7 @@
 ;
 ; ** 16/09/2011
 ;	Added extra code to stop windows tooltips for additional credentials when set in ini
+;	Added a exit_on_complete option to config.ini to kill tool on successful install
 ;
 ; ** 15/09/2011
 ;	Added Wired EAP Credentials being set by tool
