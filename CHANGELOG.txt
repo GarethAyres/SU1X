@@ -1,5 +1,8 @@
 ; SU1X Change log
 ;
+; ** 22/09/2011
+;	Fixed bug with need to escape & < and > characters in eap user data, as parsed as xml.
+;
 ; ** 16/09/2011
 ;	Added extra code to stop windows tooltips for additional credentials when set in ini
 ;	Added a exit_on_complete option to config.ini to kill tool on successful install

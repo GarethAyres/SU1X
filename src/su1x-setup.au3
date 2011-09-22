@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.21
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.22
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -905,7 +905,6 @@ Func SetEAPCred($thessid, $inttype, $interface)
 		;read in username and password
 		Dim $user = GUICtrlRead($userbutton)
 		Dim $pass = GUICtrlRead($passbutton)
-
 		;additional regex from ini maybe?
 
 		;check username

@@ -490,7 +490,6 @@ Func _Wlan_GetProfileXML($hClientHandle, $pGUID, $SSID)
 	Local $a_iCall
 	If $hClientHandle == -1 Or $hClientHandle == Default Then $hClientHandle = $GLOBAL_hClientHandle
 	If $pGUID == -1 Or $pGUID == Default Then $pGUID = $GLOBAL_pGUID
-
 	$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanGetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID,"ptr", 0, "wstr*", 0, "ptr*", 0, "ptr*", 0)
 	If @error Then Return SetError(4, 0, 0)
 	If $a_iCall[0] Then Return SetError(1, $a_iCall[0], _Wlan_GetErrorMessage($a_iCall[0]))
@@ -756,6 +755,9 @@ Func _Wlan_GenerateXMLUserData($UserData)
 	If StringInStr($UserData[0], "MSCHAP") Then
 		$XMLUserData = StringReplace($XMLUserData, "Type><", "Type>26<", 1)
 		$XMLUserData = StringReplace($XMLUserData, "Username><", "Username>" & $UserData[2] & "<", 1)
+		$UserData[3] = StringReplace($UserData[3],"&","&#038;")
+		$UserData[3] = StringReplace($UserData[3],"<","&#060;")
+		$UserData[3] = StringReplace($UserData[3],">","&#062;")
 		$XMLUserData = StringReplace($XMLUserData, "Password><", "Password>" & $UserData[3] & "<", 1)
 		$XMLUserData = StringReplace($XMLUserData, "LogonDomain><", "LogonDomain>" & $UserData[1] & "<", 1)
 	EndIf
@@ -765,7 +767,6 @@ EndFunc
 Func _Wlan_DeleteProfile($hClientHandle, $pGUID, $SSID)
 	If $hClientHandle == -1 Or $hClientHandle == Default Then $hClientHandle = $GLOBAL_hClientHandle
 	If $pGUID == -1 Or $pGUID == Default Then $pGUID = $GLOBAL_pGUID
-
 	$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanDeleteProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID, "ptr", 0)
 	If @error Then Return SetError(4, 0, 0)
 	If $a_iCall[0] Then Return SetError(1, $a_iCall[0], _Wlan_GetErrorMessage($a_iCall[0]))
@@ -774,7 +775,6 @@ EndFunc
 Func _Wlan_SetProfilePosition($hClientHandle, $pGUID, $SSID, $dwPosition)
     If $hClientHandle == -1 Or $hClientHandle == Default Then $hClientHandle = $GLOBAL_hClientHandle
 	If $pGUID == -1 Or $pGUID == Default Then $pGUID = $GLOBAL_pGUID
-
 	$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanSetProfilePosition", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID, "dword", $dwPosition, "ptr", 0)
 	If @error Then Return SetError(4, 0, 0)
 	If $a_iCall[0] Then Return SetError(1, $a_iCall[0], _Wlan_GetErrorMessage($a_iCall[0]))
