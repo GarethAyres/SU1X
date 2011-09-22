@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X - 802.1X Config Tool
 #AutoIt3Wrapper_Res_Description=SU1X - 802.1X Config Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.22
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.23
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -166,6 +166,7 @@ Dim $probdesc = "none"
 Dim $userbutton
 Dim $passbutton
 Dim $remove_wifi_arg = 0
+Dim $winreconnect = 0
 Global $hClientHandle = 0
 Global $pGUID = 0
 Global $Enum
@@ -682,21 +683,28 @@ Func CloseConnectWindows()
 	;first bring su1x to front
 	WinSetOnTop($title, "", 1)
 	$winexist = False
-	If WinExists("Connect to a Network") Then
-		;WinWaitClose("Network Connections","",15)
+	;If WinExists("[CLASS:tooltips_class32]") Then
+	;	$text = WinGetText("[CLASS:tooltips_class32]", "")
+	;	MsgBox(0, "Text read was:", $text)
+	;	WinKill("[CLASS:tooltips_class32]")
+	;	DoDebug("Closed [CLASS:tooltips_class32]")
+	;	$winexist = True
+	;EndIf
+	If WinExists("Connect to a Network", "logon") Then
 		WinKill("Connect to a Network")
+		$winreconnect = 1
 		DoDebug("Closed Connect to a Network")
 		$winexist = True
 	EndIf
 	If WinExists("Windows Security") Then
-		;WinWaitClose("Network Connections","",15)
 		WinKill("Windows Security")
+		$winreconnect = 1
 		DoDebug("Closed Windows Security")
 		$winexist = True
 	EndIf
 	If WinExists("Click to provide additional information.") Then
-		;WinWaitClose("Network Connections","",15)
 		WinKill("Click to provide additional information.")
+		$winreconnect = 1
 		DoDebug("Closed Click to provide additional information.")
 		$winexist = True
 	EndIf
@@ -1894,9 +1902,10 @@ While 1
 		;***************************************************************************************REMOVE PRINTER
 
 		;***************************************************************************************TRY TO CONNECT
-		If $msg == $tryconnect Then
+		If $msg == $tryconnect Or $winreconnect == 1 Then
 			DoDebug("***TRY TO REAUTH***")
 			$progress_meter = 0;
+			$winreconnect = 0
 			UpdateProgress(0);
 			UpdateOutput("***Trying to Connect to:" & $SSID & "***")
 			UpdateProgress(0);
