@@ -1,11 +1,12 @@
 #region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_icon=..\..\SETUP04.ICO
-#AutoIt3Wrapper_outfile=..\bin\getprofile.exe
+#AutoIt3Wrapper_Icon=..\..\SETUP04.ICO
+#AutoIt3Wrapper_Outfile=..\bin\getprofile.exe
 #AutoIt3Wrapper_Compression=0
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=SU1X wireless and wired profile capture tool
 #AutoIt3Wrapper_Res_Description=SU1X wireless and wired profile capture tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.1.0
+#AutoIt3Wrapper_Res_Fileversion=2.0.1.1
+#AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres, Swansea University
 #AutoIt3Wrapper_Res_requestedExecutionLevel=requireAdministrator
 #AutoIt3Wrapper_Run_Tidy=y
@@ -29,6 +30,8 @@
 ;	or implied. See the License for the specific language governing
 ;	permissions and limitations under the License.
 ;
+; Updated 18/05/2012
+; Added support for Windows 8 profiles
 ;
 ; Updated 22/06/2011
 ; Changed most of the script to be more efficient
@@ -117,6 +120,8 @@ Func GetOSVersion()
 			Return "vista"
 		Case StringInStr(@OSVersion, "7", 0)
 			Return "win7"
+		Case StringInStr(@OSVersion, "8", 0)
+			Return "win8"
 		Case StringInStr(@OSVersion, "XP", 0)
 			If @OSServicePack == "Service Pack 2" Then
 				Return "xpsp2"
@@ -196,7 +201,7 @@ If IsObj($colItems) Then
 		$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
 		;DoDebug($adapter)
 		DoDebug("adapter = " & $objItem.NetConnectionID & " and desc = " & $objItem.Description)
-		if (StringInStr($objItem.description, "Wireless") Or StringInStr($objItem.description, "Wi") Or StringInStr($objItem.description, "802.11") Or StringInStr($objItem.description, "Centrino")) Then
+		If (StringInStr($objItem.description, "Wireless") Or StringInStr($objItem.description, "Wi") Or StringInStr($objItem.description, "802.11") Or StringInStr($objItem.description, "Centrino")) Then
 			$wireless = " [wireless]"
 		Else
 			$wireless = " [wired]"
@@ -244,7 +249,7 @@ While 1
 		$interface = GUICtrlRead($combo)
 		DoDebug("selected interface = " & $interface)
 		Dim $output = ""
-		if (StringInStr($interface, "wireless")) Then
+		If (StringInStr($interface, "wireless")) Then
 			;---------------------------------------------------------------------------------------------------WIRELESS Capture
 			GUICtrlSetData($progressbar1, 0)
 			UpdateProgress(10);
@@ -265,7 +270,7 @@ While 1
 				$pGUID = $Enum[$alladapters][0]
 				;if adapter is the one selected by the user
 				DoDebug($interface & " and " & $Enum[$alladapters][1])
-				if (StringInStr($interface, $Enum[$alladapters][1])) Then
+				If (StringInStr($interface, $Enum[$alladapters][1])) Then
 					DoDebug("Adapter=" & $Enum[$alladapters][1])
 					$profiles = _Wlan_GetProfileList($hClientHandle, $pGUID)
 					If (UBound($profiles) == 0) Then
@@ -279,14 +284,14 @@ While 1
 							$profile_type = _Wlan_GetProfile($hClientHandle, $pGUID, $profiles[$numprofiles])
 							Dim $authentication = $profile_type[3]
 							;$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanGetProfile", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $SSID,"ptr", 0, "wstr*", 0, "ptr*", 0, "ptr*", 0)
-							if (@error) Then
+							If (@error) Then
 								DoDebug("No profile exists!")
 								DoDebug("Adapter= " & $Enum[$alladapters][1])
 								DoDebug("wlan_getProfileXML result = " & $profile)
 								MsgBox(1, "Error", "No profile exists! Exiting...")
 								ExitLoop
 							EndIf
-							if ($DEBUG > 0) Then _ArrayDisplay($profile, "Details of profile captured")
+							If ($DEBUG > 0) Then _ArrayDisplay($profile, "Details of profile captured")
 							UpdateProgress(10)
 							$output &= SaveXMLProfile($profiles[$numprofiles], $profile, $numprofiles, $authentication) & " "
 							UpdateProgress(10)
@@ -305,7 +310,7 @@ While 1
 			If IsObj($colItems) Then
 				For $objItem In $colItems
 					UpdateProgress(10);
-					if (StringInStr($interface, $objItem.description)) Then
+					If (StringInStr($interface, $objItem.description)) Then
 						$wired_interface = $objItem.netconnectionid
 						UpdateProgress(20);
 						$output &= SaveWiredXMLProfile($wired_interface) & " "
