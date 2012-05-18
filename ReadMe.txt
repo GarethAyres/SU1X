@@ -1,7 +1,7 @@
 SU1X Readme file by Gareth Ayres.
 http://su1x.swan.ac.uk
 
-Works with: XP SP3, VISTA (All SPs) and 7.
+Works with: XP SP3, VISTA (All SPs), win7 and win8.
 
 Features now include:
 -Intercept wireless reauths, reloading tool
@@ -20,6 +20,7 @@ Features now include:
 -Support tab: (checks: adapter, wzc service, profile presence, IP)
 -Outputs check results to user with tooltip and/or to file
 -Printer tab to add/remove networked printer
+-Direct user to problem reporting  page on fallback network if problem detected
 
 
 There are two exe's that make up this package:
