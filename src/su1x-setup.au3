@@ -1,11 +1,12 @@
+#RequireAdmin
 #region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_icon=..\..\Swansea Release\swansea_eduroam_release_8\swansea.ico
-#AutoIt3Wrapper_outfile=..\bin\su1x-setup.exe
+#AutoIt3Wrapper_Icon=SETUP07.ICO
+#AutoIt3Wrapper_Outfile=..\bin\su1x-setup.exe
 #AutoIt3Wrapper_Compression=0
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.24
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.25
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -855,7 +856,7 @@ Func alreadyRunning()
 			Else
 				$loopmax = 4
 			EndIf
-			TrayTip("Reconnecting to " & $SSID, "Attemptign to reconnect to " & $SSID, 10, 2)
+			TrayTip("Reconnecting to " & $SSID, "Attempting to reconnect to " & $SSID, 10, 2)
 			While 1
 				;check if connected and got an ip
 				CloseConnectWindows()
