@@ -1,12 +1,12 @@
 #RequireAdmin
 #region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_Icon=SETUP07.ICO
-#AutoIt3Wrapper_Outfile=..\bin\su1x-setup.exe
+#AutoIt3Wrapper_icon=SETUP07.ICO
+#AutoIt3Wrapper_outfile=..\bin\su1x-setup.exe
 #AutoIt3Wrapper_Compression=0
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.25
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.26
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -1239,7 +1239,7 @@ While 1
 
 		;-----------------------------------------------------------
 		;If install button clicked
-		If $msg == $installb Then
+		If ($msg == $installb Or StringInStr($argument1, "silent") > 0) Then
 			;-----------------------------------------------------------check wired OR wireless
 			If ($wired == 0 And $wireless == 0) Then
 				DoDebug("Wired AND Wireless set to false in config")
@@ -2105,4 +2105,3 @@ WEnd
 ;-------------------------------------------------------------------------
 
 Exit
-
