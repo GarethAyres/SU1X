@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.26
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.27
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -1427,7 +1427,7 @@ While 1
 			If ($USESPLASH == 1) Then SplashOff()
 			;exit tool on completiong if all successfull
 			If ($exitoncomplete == 1 And $probconnect == 0) Then
-				MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
+				if (StringInStr($argument1, "silent") == 0) Then MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
 				Exit
 			EndIf
 		EndIf
