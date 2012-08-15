@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.27
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.28
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -736,6 +736,19 @@ EndFunc   ;==>SetPriority
 
 ;-------------------------------------------------------------------------
 ; Does all the prodding required to set the proxy settings in IE and FireFox
+
+Func RemoveProxy()
+	;removes proxy settings
+	if ($proxy == 1) Then
+		$orig_key = RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections", "WiFiConfigBackup")
+		If @error = 0 Then
+			$removeProxy1 = RegDelete("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections", "DefaultConnectionSettings")
+			RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections", "DefaultConnectionSettings", "REG_BINARY", $orig_key)
+			$removeProxy2 = RegDelete("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections", "WiFiConfigBackup")
+			DoDebug("[remove] Moved backed up proxy reg key back")
+		EndIf
+	EndIf
+EndFunc   ;==>RemoveProxy
 
 Func ConfigProxy()
 	If ($proxy == 1) Then
@@ -1880,6 +1893,7 @@ While 1
 				UpdateProgress(10);
 				If ($networkcount < 1) Then UpdateOutput("No devices found to remove profile")
 			EndIf
+			RemoveProxy()
 			TrayTip("Removed " & $SSID, "Tool and wireless networks removed", 30, 3)
 			UpdateProgress(100);
 			If ($remove_wifi_arg == 1) Then
