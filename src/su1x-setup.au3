@@ -739,7 +739,7 @@ EndFunc   ;==>SetPriority
 
 Func RemoveProxy()
 	;removes proxy settings
-	if ($proxy == 1) Then
+	If ($proxy == 1) Then
 		$orig_key = RegRead("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections", "WiFiConfigBackup")
 		If @error = 0 Then
 			$removeProxy1 = RegDelete("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections", "DefaultConnectionSettings")
@@ -1440,7 +1440,7 @@ While 1
 			If ($USESPLASH == 1) Then SplashOff()
 			;exit tool on completiong if all successfull
 			If ($exitoncomplete == 1 And $probconnect == 0) Then
-				if (StringInStr($argument1, "silent") == 0) Then MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
+				If (StringInStr($argument1, "silent") == 0) Then MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
 				Exit
 			EndIf
 		EndIf
