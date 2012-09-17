@@ -1,0 +1,2 @@
+$remove1 = RegDelete("HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Main", "Start Page")
+$add1 = RegWrite("HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\Main", "Start Page", "REG_SZ", "https://home.swan.ac.uk")

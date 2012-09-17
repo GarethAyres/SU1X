@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.28
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.29
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -129,6 +129,8 @@ $regtest_url = IniRead($CONFIGFILE, "support", "regtest_url", "0")
 $sendsupport_url = IniRead($CONFIGFILE, "support", "sendsupport_url", "0")
 $sendsupport_dept = IniRead($CONFIGFILE, "support", "sendsupport_dept", "0")
 $report_problem_url = IniRead($CONFIGFILE, "support", "report_problem_url", "")
+$radioMap = IniRead($CONFIGFILE, "support", "radioMap", "0")
+$radioMap_url = IniRead($CONFIGFILE, "support", "radioMap_url", "")
 
 ;------------------------------------------------------------------------------------------------------------
 ;---------Variable Initialisation
@@ -172,6 +174,7 @@ Dim $winreconnect = 0
 Global $hClientHandle = 0
 Global $pGUID = 0
 Global $Enum
+Dim $user_enter = 0
 
 ;------------------------------------------------------------------------------------------------
 ;Set up Debugging
@@ -935,14 +938,14 @@ Func SetEAPCred($thessid, $inttype, $interface)
 
 		;check username
 		If (StringInStr($user, "123456") > 0 Or StringLen($user) < 1) Then
-			UpdateProgress(100)
+			UpdateProgress(10)
 			UpdateOutput("ERROR: Please enter a username")
 			Return 0
 		EndIf
 
 		;check password
 		If (StringLen($pass) < 1) Then
-			UpdateProgress(100)
+			UpdateProgress(10)
 			UpdateOutput("ERROR: Please enter a password")
 			Return 0
 		EndIf
@@ -1130,6 +1133,145 @@ Func ConfigWireless($profilesXML)
 	EndIf
 EndFunc   ;==>ConfigWireless
 
+;function to build a radio map of crowd sourced wifi fingerprints
+Func BuildRadioMap()
+	$radioFile = "radioMap.txt"
+	;if file exists remove it
+	If FileExists($radioFile) Then
+		FileDelete($radioFile)
+	EndIf
+	$cmd = "netsh wlan show networks mode=Bssid > " & $radioFile
+	;DoDebug("cmd=" & $cmd)
+	$result = RunWait(@ComSpec & " /c " & $cmd, "", @SW_HIDE)
+	;*****************************************************
+	;read in radio map Files
+	$mapFile = FileOpen($radioFile, 0)
+	; Check if file opened for reading OK
+	If $mapFile = -1 Then
+		DoDebug("[radioMap]Unable to open radio map file:" & $radioFile)
+	Else
+		DoDebug("[radioMap]wlan trace file ok:" & $radioFile)
+		Dim $aline
+		Dim $radio_ssid
+		Dim $radio_bssid
+		Dim $radio_network_type
+		Dim $radio_auth
+		Dim $radio_enc
+		Dim $radio_signal
+		Dim $radio_chan
+		Dim $radio_basic_rates
+		Dim $radio_other_rates
+		Dim $wifi_tmp_mac = GetMac("wireless")
+		$wifi_tmp_mac = StringReplace($wifi_tmp_mac, ":", "", 0, 0)
+
+		While 1
+			;SSID 1 : eduroam
+			;Network type            : Infrastructure
+			;Authentication          : WPA2-Enterprise
+			;Encryption              : CCMP
+			;BSSID 1                 : 00:18:19:1f:1a:f0
+			; Signal             : 15%
+			; Radio type         : 802.11g
+			;Channel            : 1
+			;Basic rates (Mbps) : 1 2 5.5 11
+			;Other rates (Mbps) : 6 9 12 18 24 36 48 54
+
+			$aline = FileReadLine($mapFile)
+			If @error = -1 Then ExitLoop
+			;get ssid
+			If (StringInStr($aline, "SSID", 0, 1, 1, 4)) Then
+				$sub = StringSplit($aline, ":")
+				If (IsArray($sub)) Then
+					$sub = StringTrimLeft($sub[2], 1)
+					$radio_ssid = $sub
+				Else
+					$radio_ssid = "error"
+					ExitLoop;
+				EndIf
+				DoDebug("SSID=" & $radio_ssid)
+
+				;Loop for each ssid
+				While 1
+					;read in each line of this subsection
+					$aline = FileReadLine($mapFile)
+					If @error = -1 Then ExitLoop
+					If (StringInStr($aline, "BSSID")) Then
+						$sub = StringSplit($aline, ":")
+						If (IsArray($sub)) Then
+							Dim $tmpmac = '';
+
+							For $i = 2 To UBound($sub) - 1
+								$tmpmac &= $sub[$i]
+							Next
+
+							$tmpmac = StringTrimLeft($tmpmac, 1)
+							$sub = StringReplace($tmpmac, ":", "", 0, 0)
+							$radio_bssid = $sub
+
+							;another sub section for each bssid
+							For $i = 4 To 1 Step -1
+								;read in each line of this subsection
+								$aline = FileReadLine($mapFile)
+								If @error = -1 Then ExitLoop
+
+								;check its not next section, if so exit loop
+								If (StringInStr($aline, "BSSID")) Then
+									ExitLoop
+								EndIf
+
+								;check for signal value
+								If (StringInStr($aline, "Signal")) Then
+									$sub = StringSplit($aline, ":")
+									If (Not IsArray($sub)) Then ExitLoop
+									$sub = StringReplace($sub[2], " ", "")
+									$sub = StringReplace($sub, "%", "")
+									$radio_signal = $sub
+								EndIf
+
+								;check for signal value
+								If (StringInStr($aline, "Radio Type")) Then
+									$sub = StringSplit($aline, ":")
+									If (Not IsArray($sub)) Then ExitLoop
+									$sub = StringReplace($sub[2], " ", "")
+									$sub = StringReplace($sub, "802.11", "")
+									$radio_network_type = $sub
+								EndIf
+
+								If @error = -1 Then ExitLoop
+							Next
+
+							;all ok then send off to locpris server
+							Dim $radio_url = $radioMap_url & "?mac=" & $wifi_tmp_mac & "&bssid=" & $radio_bssid & "&ssid=" & $radio_ssid & "&rss=" & $radio_signal & "&type=" & $radio_network_type
+							dodebug("url=" & $radio_url)
+							Local $response = InetGet($radio_url, "", 1, 1)
+							If (@error) Then
+								DoDebug("Radio map upload error")
+							EndIf
+
+						Else
+							$radio_bssid = "error"
+							dodebug("error with bssid")
+							ExitLoop;
+						EndIf
+					EndIf
+
+					If @error = -1 Then ExitLoop
+				WEnd
+
+			EndIf
+			$showall = $showall & $aline & @CRLF
+			If @error = -1 Then ExitLoop
+		WEnd
+		FileClose($mapFile)
+		;DoDump("aline=" & $aline)
+	EndIf
+
+EndFunc   ;==>BuildRadioMap
+
+;used to captue enter press on password box to start install.
+Func SetHotkeyAuth()
+	$user_enter = 1
+EndFunc   ;==>SetHotkeyAuth
 
 ;------------------------------------------------------------------------------------------------------------
 ;---------GUI code
@@ -1151,6 +1293,8 @@ If ($showup > 0) Then
 	If ($showuptick > 0) Then
 		$showPass = GUICtrlCreateCheckbox("Show Password", 170, 185, 100, 20)
 	EndIf
+	;set hotkey for enter press, so connected on enter press
+	HotKeySet("{ENTER}", "SetHotkeyAuth")
 Else
 	$showuptick = 0
 	;showuptick must be 0 if showup 0, force set to avoid bad config
@@ -1252,7 +1396,8 @@ While 1
 
 		;-----------------------------------------------------------
 		;If install button clicked
-		If ($msg == $installb Or StringInStr($argument1, "silent") > 0) Then
+		If ($msg == $installb Or StringInStr($argument1, "silent") > 0 Or $user_enter == 1) Then
+			$user_enter = 0;
 			;-----------------------------------------------------------check wired OR wireless
 			If ($wired == 0 And $wireless == 0) Then
 				DoDebug("Wired AND Wireless set to false in config")
@@ -1349,6 +1494,12 @@ While 1
 										DoDebug("[setup]Connected")
 										UpdateOutput($SSID & " connected with ip=" & $ip1)
 										TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
+										;connected, so build radio map
+										If ($radioMap) Then
+											;check registry for key allowing radio map, set by installer
+											Dim $radio_ok = RegRead("HKEY_CURRENT_USER\Software\su1x\", "radioMap")
+											If StringCompare($radio_ok, "y") == 0 Then BuildRadioMap()
+										EndIf
 										Sleep(2000)
 										ExitLoop
 									Else
@@ -2032,6 +2183,11 @@ While 1
 								DoDebug("[reauth]Connected")
 								UpdateOutput($SSID & " connected with ip=" & $ip1)
 								TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
+								If ($radioMap) Then
+									;check registry for key allowing radio map, set by installer
+									Dim $radio_ok = RegRead("HKEY_CURRENT_USER\Software\su1x\", "radioMap")
+									If StringCompare($radio_ok, "y") == 0 Then BuildRadioMap()
+								EndIf
 								Sleep(2000)
 								ExitLoop
 								Exit
@@ -2119,3 +2275,4 @@ WEnd
 ;-------------------------------------------------------------------------
 
 Exit
+
