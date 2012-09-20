@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.29
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.30
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -564,7 +564,7 @@ Func GetOSVersion()
 			; we state to the *user* you need SP3 when really you can get away with SP2+KB918997
 			Switch $sp
 				Case 3
-					UpdateOutput("Found Service Pack 3")
+					;UpdateOutput("Found Service Pack 3")
 				Case 2
 					RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB918997", "Installed")
 					If @error Then
@@ -1480,7 +1480,6 @@ While 1
 					CloseConnectWindows()
 					UpdateProgress(5)
 					$retry_state = _Wlan_QueryInterface($hClientHandle, $pGUID, 2)
-					DoDebug("error on int on connect = " & @error & "retry_state=" & $retry_state)
 					If (Not @error) Then
 						If (StringCompare("Connected", $retry_state, 0) == 0) Then
 							$ip1 = @IPAddress1
@@ -1490,26 +1489,27 @@ While 1
 								$retry_state2 = _Wlan_QueryInterface($hClientHandle, $pGUID, 3)
 								If (IsArray($retry_state2)) Then
 									$connectedssid = $retry_state2[1]
-									If (StringCompare($SSID, $connectedssid) == 0) Then
-										DoDebug("[setup]Connected")
-										UpdateOutput($SSID & " connected with ip=" & $ip1)
-										TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
-										;connected, so build radio map
-										If ($radioMap) Then
-											;check registry for key allowing radio map, set by installer
-											Dim $radio_ok = RegRead("HKEY_CURRENT_USER\Software\su1x\", "radioMap")
-											If StringCompare($radio_ok, "y") == 0 Then BuildRadioMap()
+									If (StringLen($connectedssid)) > 0 Then
+										If (StringCompare($SSID, $connectedssid) == 0) Then
+											DoDebug("[setup]Connected")
+											UpdateOutput($SSID & " connected with ip=" & $ip1)
+											TrayTip("Connected", "You are now connected to " & $SSID & ".", 30, 1)
+											;connected, so build radio map
+											If ($radioMap) Then
+												;check registry for key allowing radio map, set by installer
+												Dim $radio_ok = RegRead("HKEY_CURRENT_USER\Software\su1x\", "radioMap")
+												If StringCompare($radio_ok, "y") == 0 Then BuildRadioMap()
+											EndIf
+											Sleep(2000)
+											ExitLoop
+										Else
+											DoDebug("[setup]Connected to wrong network")
+											UpdateOutput($connectedssid & " connected with ip=" & $ip1)
+											TrayTip("Problem", $SSID & " Failed. You are now connected to " & $connectedssid & ".", 30, 1)
+											Sleep(2000)
+											ExitLoop
 										EndIf
-										Sleep(2000)
-										ExitLoop
-									Else
-										DoDebug("[setup]Connected to wrong network")
-										UpdateOutput($connectedssid & " connected with ip=" & $ip1)
-										TrayTip("Problem", $SSID & " Failed. You are now connected to " & $connectedssid & ".", 30, 1)
-										Sleep(2000)
-										ExitLoop
 									EndIf
-
 								EndIf
 								;error msg here?
 							EndIf
@@ -1531,8 +1531,8 @@ While 1
 						DoDebug("[setup]Interface State Problem")
 						UpdateOutput($SSID & " Failed... retrying... ")
 					EndIf
-					Sleep(2000)
-					If ($loop_count > 7) Then
+					Sleep(3000)
+					If ($loop_count > 9) Then
 						$probconnect = 1
 						ExitLoop
 					EndIf
@@ -1836,8 +1836,7 @@ While 1
 						EndIf
 						If (StringInStr($response, "Password Incorrect", 0)) Then
 							UpdateOutput("****Wireless Password Incorrect")
-							UpdateOutput("****By Default is Date of birth in format of:    dd/mm/yyyy")
-							$output &= "Wireless Password [FAIL]" & @CRLF & "Incorrect password." & @CRLF & "By Default it is DOB in format dd/mm/yyyy" & @CRLF
+							$output &= "Wireless Password [FAIL]" & @CRLF & "Incorrect password." & @CRLF
 							;$output &= "Wireless Password [FAIL]" & @CRLF & "The username is correct, but the password is not correct." & @CRLF & @CRLF
 						EndIf
 						UpdateProgress(10)
