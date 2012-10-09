@@ -1,5 +1,11 @@
 ; SU1X Change log
 ;
+; ** 22/09/2012
+;	Added windows 8 support
+;	Added beta radiomap feature
+;	Fixed bug with XP.
+;
+;
 ; ** 22/09/2011
 ;	Fixed bug with need to escape & < and > characters in eap user data, as parsed as xml.
 ;
