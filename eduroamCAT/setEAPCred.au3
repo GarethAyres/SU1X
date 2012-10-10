@@ -46,7 +46,7 @@ Dim $eaptype
 Dim $os
 Dim $WZCSVCStarted
 Dim $num_arguments = 0
-Dim $DEBUG = 1
+Dim $DEBUG = 0
 Dim $debugResult
 
 Global $hClientHandle = 0
