@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.7
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.8
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=0.0.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -220,11 +220,11 @@ Func GetOSVersion()
 					EndIf
 				Case 0 To 2
 					MsgBox(16, "Updates Needed", "You must have at least Service Pack 3 installed. Please run Windows Update.")
-					Exit
+					Exit (3)
 			EndSwitch
 		Case Else
 			MsgBox(16, "Incompatible Operating System", "You need to be running at least Microsoft Windows XP")
-			Exit
+			Exit (3)
 	EndSwitch
 
 	Return $os
@@ -328,24 +328,29 @@ EndIf
 If (Not (WlanAPIConnect())) Then
 	If (Not (WlanAPICheck())) Then
 		DoDebug("wifi API problem")
-		Exit
+		Exit (2)
 	EndIf
 EndIf
+
+Dim $success = 0
 
 If (StringLen($thessid) > 0) Then
 	If (SetEAPCred($thessid, $username, $password, $eaptype)) Then
 		DoDebug("[EAPCred]Success for " & $thessid)
+		$success = 0
 	Else
 		DoDebug("[EAPCred]Failure for " & $thessid)
+		$success = 4
 	EndIf
 Else
 	DoDebug("The ssid argument is missing, so doing nothing...")
+	Exit (1)
 EndIf
 
 
 WlanAPIClose()
 DoDebug("***Exiting SU1X***")
-Exit
+Exit (0)
 ;-------------------------------------------------------------------------
 ;End of Program
 ;-------------------------------------------------------------------------
