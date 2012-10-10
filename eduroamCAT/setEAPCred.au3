@@ -38,11 +38,6 @@
 
 
 #include "../src/Native_Wifi_Func_V3_3b.au3"
-#include <GUIConstants.au3>
-#include <GuiListView.au3>
-#include <EditConstants.au3>
-#include <WindowsConstants.au3>
-#include <GuiListView.au3>
 #include <String.au3>
 
 
@@ -75,7 +70,7 @@ If ($DEBUG > 0) Then
 	$file = FileOpen($filename, 1)
 	; Check if file opened for reading OK
 	If ($file == -1) Then
-		MsgBox(16, "DEBUG", "Unable to open debug dump file.:" & $file)
+		;MsgBox(16, "DEBUG", "Unable to open debug dump file.:" & $file)
 	EndIf
 Else
 	FileClose($file)
@@ -148,7 +143,7 @@ Func WlanAPIConnect()
 	Else
 		Local $interfaceWifi = _Wlan_StartSession()
 		If @error Then
-			MsgBox(16, "DEBUG", "Wifi DLL Open Error: " & @extended & $interfaceWifi)
+			DoDebug("[WLANConnect]WLANAPI DLL Open Error:" & @extended & $interfaceWifi)
 			Return 0
 		EndIf
 		$hClientHandle = @extended
@@ -164,7 +159,7 @@ Func WlanAPIClose()
 	;hClientHandle returned as @extended
 	_Wlan_EndSession($hClientHandle)
 	If @error Then
-		MsgBox(16, "DEBUG", "Wifi DLL Close Error")
+		DoDebug("[WLANClose]WLANAPI DLL Close Error:")
 	EndIf
 	$pGUID = 0
 	$hClientHandle = 0
@@ -176,14 +171,10 @@ Func WlanAPICheck()
 	If (Not ($hClientHandle) Or @error > 0) Then
 		WlanAPIConnect()
 		If @error Then
-			MsgBox(16, "DEBUG", "Wifi DLL Open Error")
+			DoDebug("[WLANCheck]WLANAPI DLL Open Error:")
 			Return 0
 		ElseIf (UBound($Enum) == 0) Then
-
-			MsgBox(16, "Error", "No Wireless Adapter Found.")
-			Return 0
-
-			MsgBox(16, "Error", "No Wireless Adapter Found.")
+			DoDebug("[WLANCheck]WLAN Adapter not found")
 			Return 0
 		Else
 			Return 1
@@ -193,42 +184,6 @@ Func WlanAPICheck()
 	EndIf
 	Return 1
 EndFunc   ;==>WlanAPICheck
-
-
-;return OS string for use in XML file
-Func GetOSVersion()
-	Dim $os
-	Dim $sp = StringRight(@OSServicePack, 1)
-	Switch @OSVersion
-		Case "WIN_8"
-			$os = "win8"
-		Case "WIN_7"
-			$os = "win7"
-		Case "WIN_VISTA"
-			$os = "vista"
-		Case "WIN_XP", "WIN_XPe"
-			$os = "xp"
-			; we state to the *user* you need SP3 when really you can get away with SP2+KB918997
-			Switch $sp
-				Case 3
-					;UpdateOutput("Found Service Pack 3")
-				Case 2
-					RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\HotFix\KB918997", "Installed")
-					If @error Then
-						DoDebug("[setup] hotfix" & @error)
-						ContinueCase
-					EndIf
-				Case 0 To 2
-					MsgBox(16, "Updates Needed", "You must have at least Service Pack 3 installed. Please run Windows Update.")
-					Exit (3)
-			EndSwitch
-		Case Else
-			MsgBox(16, "Incompatible Operating System", "You need to be running at least Microsoft Windows XP")
-			Exit (3)
-	EndSwitch
-
-	Return $os
-EndFunc   ;==>GetOSVersion
 
 
 ;Checks if a specified service is running.
@@ -262,15 +217,6 @@ EndFunc   ;==>SetPriority
 
 ;-------------------------------------------------------------------------
 ; Does all the prodding required to set the proxy settings in IE and FireFox
-
-;Function to check isf admin
-Func CheckAdmin()
-	If Not (IsAdmin()) Then
-		MsgBox(16, "Insufficient Privileges", "Administrative rights are required.")
-		Exit
-	EndIf
-	Return 1
-EndFunc   ;==>CheckAdmin
 
 Func SetEAPCred($thessid, $username, $password, $eaptype)
 	;*****************************SET  profile EAP credentials
