@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.10
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.11
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=0.0.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -48,6 +48,7 @@ Dim $WZCSVCStarted
 Dim $num_arguments = 0
 Dim $DEBUG = 0
 Dim $debugResult
+Dim $file
 
 Global $hClientHandle = 0
 Global $pGUID = 0
@@ -83,25 +84,15 @@ Func DoDebug($text)
 		MsgBox(16, "DEBUG", $text)
 		$debugResult = $debugResult & @CRLF & $text
 	EndIf
-	;Write to file
-	$file = FileOpen($filename, 1)
-	If (Not ($file = -1)) Then
-		FileWriteLine($file, $text)
-		FileClose($file)
+	If ($DEBUG > 0) Then
+		;Write to file
+		$file = FileOpen($filename, 1)
+		If (Not ($file = -1)) Then
+			FileWriteLine($file, $text)
+			FileClose($file)
+		EndIf
 	EndIf
 EndFunc   ;==>DoDebug
-
-;Write text to debug file
-Func DoDump($text)
-	BlockInput(0)
-	SplashOff()
-	;Write to file
-	$file = FileOpen($filename, 1)
-	If (Not ($file = -1)) Then
-		FileWriteLine($file, $text)
-		FileClose($file)
-	EndIf
-EndFunc   ;==>DoDump
 
 ;Function to check a service is running
 Func CheckService($ServiceName)
