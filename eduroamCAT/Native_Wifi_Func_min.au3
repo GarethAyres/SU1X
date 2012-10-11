@@ -94,7 +94,7 @@ Global Const $Elements_Creds_Base_End = '-|-'
 
 Func _Wlan_OpenHandle()
 	Local $iVesion = 1
-	If @OSBuild == "WIN_VISTA" Or @OSBuild == "WIN_2008" Or @OSBuild == "WIN_7" Then $iVesion = 2
+	If @OSVersion == "WIN_VISTA" Or @OSVersion == "WIN_2008" Or @OSVersion == "WIN_7"  Or @OSVersion == "WIN_8" Then $iVesion = 2
 	$a_iCall = DllCall($WLANAPIDLL, "dword", "WlanOpenHandle", "dword", $iVesion, "ptr", 0, "dword*", 0, "hwnd*", 0)
 	If @error Then Return SetError(4, 0, 0)
 	If $a_iCall[0] Then Return SetError(1, $a_iCall[0], _Wlan_GetErrorMessage($a_iCall[0]))

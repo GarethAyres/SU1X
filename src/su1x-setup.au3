@@ -43,7 +43,7 @@
 ;
 
 
-#include "Native_Wifi_Func_V3_3b.au3"
+#include "Native_Wifi_Func_V4.au3"
 #include <GUIConstants.au3>
 #include <GuiListView.au3>
 #include <EditConstants.au3>

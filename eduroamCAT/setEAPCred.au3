@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.12
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.13
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=0.0.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
