@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.11
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.12
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=0.0.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -27,10 +27,7 @@
 ; To save time, makes use of wirelss API interface by MattyD (http://www.autoitscript.com/forum/index.php?showtopic=91018&st=0)
 ;
 
-
-#include "../src/Native_Wifi_Func_V3_3b.au3"
-#include <String.au3>
-
+#include "Native_Wifi_Func_min.au3"
 
 ;-------------------------------------------------------------------------
 ; Global variables and stuff
@@ -184,18 +181,6 @@ Func IsServiceRunning($ServiceName)
 		Return 0
 	EndIf
 EndFunc   ;==>IsServiceRunning
-
-;sets the priority of a ssid profile
-Func SetPriority($hClientHandle, $pGUID, $thessid, $priority)
-	Dim $setpriority = DllCall($WLANAPIDLL, "dword", "WlanSetProfilePosition", "hwnd", $hClientHandle, "ptr", $pGUID, "wstr", $thessid, "dword", $priority, "ptr", 0)
-	DoDebug("[SetPriority] ssid=" & $thessid & " and priority=" & $priority)
-	If ($setpriority[0] > 0) Then
-		If $setpriority[0] Then DoDebug("[SetWirelessPriority]Error Msg=" & _Wlan_GetErrorMessage($setpriority[0]))
-		Return 0
-	EndIf
-	DoDebug("[SetPriority] Success ssid=" & $thessid & " and priority=" & $priority)
-	Return 1
-EndFunc   ;==>SetPriority
 
 ;-------------------------------------------------------------------------
 ; Does all the prodding required to set the proxy settings in IE and FireFox
