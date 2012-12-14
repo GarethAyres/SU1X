@@ -1,5 +1,8 @@
 ; SU1X Change log
 ;
+; ** 14/12/2012
+;	Fixed bug with ssid with underscores in it
+;
 ; ** 22/09/2012
 ;	Added windows 8 support
 ;	Added beta radiomap feature

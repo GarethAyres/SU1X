@@ -6,7 +6,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=2.0.0.30
+#AutoIt3Wrapper_Res_Fileversion=2.0.0.31
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=1.8.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -1083,6 +1083,13 @@ Func ConfigWireless($profilesXML)
 			$afilename_orig = $afilename
 			$afilename = $tempafilename[UBound($tempafilename) - 1];
 			Dim $theprofile = _StringExplode($afilename, "_")
+			;loop to build ssid with underscore values in, as used as delimiter
+			If (UBound($theprofile) > 4) Then
+				While (UBound($theprofile) > 4)
+					$theprofile[0] = $theprofile[0] & $theprofile[1];
+					_ArrayDelete($theprofile, 1);
+				WEnd
+			EndIf
 			If (UBound($theprofile) == 4) Then
 				;looks like the correct file name type
 				Dim $XMLProfileFile = FileOpen($afilename_orig)
