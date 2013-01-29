@@ -1,0 +1,210 @@
+ 
+Interface name : Wi-Fi 
+There are 4 networks currently visible. 
+
+SSID 1 : eduroam
+    Network type            : Infrastructure
+    Authentication          : WPA2-Enterprise
+    Encryption              : CCMP 
+    BSSID 1                 : 28:93:fe:d2:0d:e0
+         Signal             : 100%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 2                 : b8:be:bf:ef:4f:70
+         Signal             : 65%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 3                 : b8:be:bf:ef:4e:d0
+         Signal             : 55%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 4                 : b8:be:bf:ef:53:60
+         Signal             : 20%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 5                 : b8:be:bf:ef:4c:60
+         Signal             : 76%  
+         Radio type         : 802.11n
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 6                 : b8:be:bf:ef:34:00
+         Signal             : 5%  
+         Radio type         : 802.11n
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 7                 : 00:18:b9:f7:2c:b1
+         Signal             : 15%  
+         Radio type         : 802.11g
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 8                 : e8:40:40:72:26:10
+         Signal             : 24%  
+         Radio type         : 802.11n
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 9                 : b8:be:bf:ef:36:50
+         Signal             : 44%  
+         Radio type         : 802.11n
+         Channel            : 11 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 10                 : b8:be:bf:ef:34:30
+         Signal             : 24%  
+         Radio type         : 802.11n
+         Channel            : 11 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 11                 : 00:19:e7:26:2c:00
+         Signal             : 0%  
+         Radio type         : 802.11g
+         Channel            : 11 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+
+SSID 2 : SwanseaUni-setup
+    Network type            : Infrastructure
+    Authentication          : Open
+    Encryption              : None 
+    BSSID 1                 : b8:be:bf:ef:4f:72
+         Signal             : 55%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 2                 : 28:93:fe:d2:0d:e6
+         Signal             : 100%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 3                 : b8:be:bf:ef:4e:d2
+         Signal             : 44%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 4                 : b8:be:bf:ef:53:62
+         Signal             : 5%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 5                 : 00:18:b9:f7:2c:b3
+         Signal             : 15%  
+         Radio type         : 802.11g
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 6                 : e8:40:40:72:26:12
+         Signal             : 10%  
+         Radio type         : 802.11n
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 7                 : b8:be:bf:ef:34:02
+         Signal             : 15%  
+         Radio type         : 802.11n
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 8                 : b8:be:bf:ef:36:52
+         Signal             : 55%  
+         Radio type         : 802.11n
+         Channel            : 11 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 9                 : 00:19:e7:26:2c:02
+         Signal             : 0%  
+         Radio type         : 802.11g
+         Channel            : 11 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+
+SSID 3 : swis-lite
+    Network type            : Infrastructure
+    Authentication          : WPA2-Personal
+    Encryption              : CCMP 
+    BSSID 1                 : b8:be:bf:ef:4f:71
+         Signal             : 65%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 2                 : 28:93:fe:d2:0d:e5
+         Signal             : 100%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 3                 : b8:be:bf:ef:4e:d1
+         Signal             : 50%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 4                 : b8:be:bf:ef:53:61
+         Signal             : 20%  
+         Radio type         : 802.11n
+         Channel            : 1 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 5                 : b8:be:bf:ef:4c:65
+         Signal             : 70%  
+         Radio type         : 802.11n
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 6                 : e8:40:40:72:26:11
+         Signal             : 24%  
+         Radio type         : 802.11n
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 7                 : b8:be:bf:ef:34:01
+         Signal             : 10%  
+         Radio type         : 802.11n
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 8                 : 00:18:b9:f7:2c:b0
+         Signal             : 10%  
+         Radio type         : 802.11g
+         Channel            : 6 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 9                 : b8:be:bf:ef:36:51
+         Signal             : 50%  
+         Radio type         : 802.11n
+         Channel            : 11 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+    BSSID 10                 : b8:be:bf:ef:34:35
+         Signal             : 24%  
+         Radio type         : 802.11n
+         Channel            : 11 
+         Basic rates (Mbps) : 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+
+SSID 4 : HP-nomodel.653A9A
+    Network type            : Adhoc
+    Authentication          : Open
+    Encryption              : None 
+    BSSID 1                 : 02:27:b7:38:2e:37
+         Signal             : 15%  
+         Radio type         : 802.11g
+         Channel            : 6 
+         Basic rates (Mbps) : 1 2 5.5 11
+         Other rates (Mbps) : 6 9 12 18 24 36 48 54
+

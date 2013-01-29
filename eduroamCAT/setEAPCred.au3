@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=n
 #AutoIt3Wrapper_Res_Comment=Swansea Eduroam Tool
 #AutoIt3Wrapper_Res_Description=Swansea Eduroam Tool
-#AutoIt3Wrapper_Res_Fileversion=0.0.0.13
+#AutoIt3Wrapper_Res_Fileversion=0.0.0.14
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
 #AutoIt3Wrapper_Res_ProductVersion=0.0.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Gareth Ayres - Swansea University
@@ -25,9 +25,11 @@
 ;
 ; Gareth Ayres (g.j.ayres@swan.ac.uk)
 ; To save time, makes use of wirelss API interface by MattyD (http://www.autoitscript.com/forum/index.php?showtopic=91018&st=0)
+; Now takes base64 encoded password as input only
 ;
 
 #include "Native_Wifi_Func_min.au3"
+#include "Base64.au3"
 
 ;-------------------------------------------------------------------------
 ; Global variables and stuff
@@ -216,6 +218,12 @@ If ($num_arguments > 2 And $num_arguments < 5) Then
 		$eaptype = $CmdLine[4]
 	Else
 		$eaptype = "PEAP-MSCHAP"
+	EndIf
+
+	;decode base64 password
+	If (StringLen($password) > 0) Then
+		$password = _Base64Decode($password)
+		$password = BinaryToString($password)
 	EndIf
 
 	DoDebug("Got arguments:" & $username & "|" & $password & "|" & $thessid)

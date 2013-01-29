@@ -1,7 +1,0 @@
-***Starting SU1X***
-Got arguments:testuser@swansea.ac.uk|fakepass|eduroam (TKIP)
-[CheckService]WLANSVC Already Running
-[WLANConnect]WLANAPI connected:BUFFALO WLI-UC-AG300N Wireless LAN Adapter
-[EAPCred]_Wlan_SetProfileUserData:1|0x00A95F78|eduroam (TKIP)|testuser@swansea.ac.uk
-[EAPCred]Success for eduroam (TKIP)
-***Exiting SU1X***
