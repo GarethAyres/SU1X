@@ -1300,7 +1300,7 @@ If ($showup > 0) Then
 	GUICtrlCreateLabel("Username:", 10, 145, 60, 20)
 	GUICtrlCreateLabel("Password:", 165, 145, 60, 20)
 	$userbutton = GUICtrlCreateInput($username, 10, 160, 150, 20)
-	$passbutton = GUICtrlCreateInput("password", 165, 160, 120, 20, BitOR($GUI_SS_DEFAULT_INPUT, $ES_PASSWORD))
+	$passbutton = GUICtrlCreateInput("", 165, 160, 120, 20, BitOR($GUI_SS_DEFAULT_INPUT, $ES_PASSWORD))
 	GUICtrlSendMsg($passbutton, 0x00CC, 42, 0)
 	;GUICtrlSetData($passbutton, $GUI_FOCUS)
 	If ($showuptick > 0) Then
