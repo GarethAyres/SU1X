@@ -1288,7 +1288,7 @@ CheckAdmin()
 alreadyRunning()
 GUICreate($title, 294, 310)
 GUISetBkColor(0xffffff) ;---------------------------------white
-$n = GUICtrlCreatePic($BANNER, 0, 0, 294, 54) ;--------pic
+$n = GUICtrlCreatePic($BANNER, 0, 0, 295, 60) ;--------pic
 If ($showup > 0) Then
 	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 70, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
 	GUICtrlCreateLabel("Username:", 10, 145, 60, 20)
