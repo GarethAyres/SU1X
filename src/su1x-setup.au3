@@ -132,6 +132,7 @@ $report_problem_url = IniRead($CONFIGFILE, "support", "report_problem_url", "")
 $radioMap = IniRead($CONFIGFILE, "support", "radioMap", "0")
 $radioMap_url = IniRead($CONFIGFILE, "support", "radioMap_url", "")
 
+
 ;------------------------------------------------------------------------------------------------------------
 ;---------Variable Initialisation
 ;------------------------------------------------------------------------------------------------------------
@@ -175,6 +176,8 @@ Global $hClientHandle = 0
 Global $pGUID = 0
 Global $Enum
 Dim $user_enter = 0
+
+
 
 ;------------------------------------------------------------------------------------------------
 ;Set up Debugging
@@ -1243,7 +1246,6 @@ Func BuildRadioMap()
 									$sub = StringReplace($sub, "802.11", "")
 									$radio_network_type = $sub
 								EndIf
-
 								If @error = -1 Then ExitLoop
 							Next
 
@@ -1300,8 +1302,6 @@ If ($showup > 0) Then
 	If ($showuptick > 0) Then
 		$showPass = GUICtrlCreateCheckbox("Show Password", 170, 185, 100, 20)
 	EndIf
-	;set hotkey for enter press, so connected on enter press
-	HotKeySet("{ENTER}", "SetHotkeyAuth")
 Else
 	$showuptick = 0
 	;showuptick must be 0 if showup 0, force set to avoid bad config
@@ -1345,7 +1345,11 @@ If ($show_printing == 0) Then GUICtrlDelete($tab2)
 If ($show_support == 0) Then GUICtrlDelete($tab3)
 ;$unInstallb = GUICtrlCreateButton("Remove", 80, 280, 50)
 ;$backupb = GUICtrlCreateButton("Check", 160,280,50)
-;-----------------------------------------------------------
+
+;set hotkey for enter press, so connected on enter press
+Local $AccelKeys[1][2] = [["{ENTER}", $installb]]
+GUISetAccelerators($AccelKeys)
+
 GUISetState(@SW_SHOW)
 ;-----------------------------------------------------------
 ;START MAIN LOOP
