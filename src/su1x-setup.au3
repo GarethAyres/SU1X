@@ -51,6 +51,7 @@
 #include <GuiListView.au3>
 #include <String.au3>
 
+OnAutoItExitRegister("DoBeforeExit")
 
 ;-------------------------------------------------------------------------
 ; Global variables and stuff
@@ -1312,7 +1313,6 @@ Else
 EndIf
 GUICtrlCreateLabel("Progress:", 15, 210, 48, 20)
 $progressbar1 = GUICtrlCreateProgress(65, 210, 200, 20)
-$exitb = GUICtrlCreateButton("Exit", 230, 270, 50)
 ;-------------------------------------------------------------------------
 ;TABS
 $tab = GUICtrlCreateTab(1, 240, 292, 70)
@@ -1368,21 +1368,7 @@ While 1
 			$checkbox = 0
 		EndIf
 		;-----------------------------------------------------------Exit Tool
-		If $msg == $exitb Then
-			WlanAPIClose()
-			DoDebug("***Exiting SU1X***")
-			Exit
-			ExitLoop
-		EndIf
-
 		If $msg == $GUI_EVENT_CLOSE Then
-			WlanAPIClose()
-			DoDebug("***Exiting SU1X***")
-			;close file if dump set
-			If ($DEBUG > 0) Then
-				DoDump("****Tool Debug Output****")
-				DoDump($debugResult)
-			EndIf
 			Exit
 		EndIf
 
@@ -2293,3 +2279,12 @@ WEnd
 
 Exit
 
+Func DoBeforeExit()
+	WlanAPIClose()
+	DoDebug("***Exiting SU1X***")
+	;close file if dump set
+	If ($DEBUG > 0) Then
+		DoDump("****Tool Debug Output****")
+		DoDump($debugResult)
+	EndIf
+EndFunc
