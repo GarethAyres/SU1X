@@ -1606,9 +1606,13 @@ While 1
 			;Setup all done, display hint if hint set and turn off splash if on
 			If ($USESPLASH == 1) Then SplashOff()
 			;exit tool on completiong if all successfull
-			If ($exitoncomplete == 1 And $probconnect == 0) Then
-				If (StringInStr($argument1, "silent") == 0) Then MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
-				Exit
+			If ($exitoncomplete > 0 And $probconnect = 0) Then
+				If (StringInStr($argument1, "silent") = 0 ) Then
+					If $exitoncomplete < 2 Then
+						MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
+					EndIf
+					Exit
+				EndIf
 			EndIf
 		EndIf
 		;-------------------------------------------------------------------------
