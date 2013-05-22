@@ -673,7 +673,7 @@ EndFunc   ;==>UpdateProgress
 
 ;output to edit box
 Func UpdateOutput($output)
-	GUICtrlSetData($myedit, $output & @CRLF, @CRLF)
+	GUICtrlSetData($myedit, @CRLF & $output, @CRLF)
 	DoDebug("UserOutput:" & $output)
 EndFunc   ;==>UpdateOutput
 
@@ -1296,7 +1296,7 @@ GUICreate($title, 294, 310)
 GUISetBkColor(0xffffff) ;---------------------------------white
 $n = GUICtrlCreatePic($BANNER, 0, 0, 295, 60) ;--------pic
 If ($showup > 0) Then
-	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 70, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
+	$myedit = GUICtrlCreateEdit($startText, 10, 70, 270, 70, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
 	GUICtrlCreateLabel("Username:", 10, 145, 60, 20)
 	GUICtrlCreateLabel("Password:", 165, 145, 60, 20)
 	$userbutton = GUICtrlCreateInput($username, 10, 160, 150, 20)
@@ -1309,7 +1309,7 @@ If ($showup > 0) Then
 Else
 	$showuptick = 0
 	;showuptick must be 0 if showup 0, force set to avoid bad config
-	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 130, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
+	$myedit = GUICtrlCreateEdit($startText, 10, 70, 270, 130, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
 EndIf
 GUICtrlCreateLabel("Progress:", 15, 210, 48, 20)
 $progressbar1 = GUICtrlCreateProgress(65, 210, 200, 20)
