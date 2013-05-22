@@ -77,7 +77,8 @@ $startText = IniRead($CONFIGFILE, "su1x", "startText", "SWIS")
 $title = IniRead($CONFIGFILE, "su1x", "title", "SWIS Eduroam - Setup Tool")
 $hint = IniRead($CONFIGFILE, "su1x", "hint", "0")
 $exitoncomplete = IniRead($CONFIGFILE, "su1x", "exit_on_complete", "0")
-$username = IniRead($CONFIGFILE, "su1x", "username", "123456@swansea.ac.uk")
+$username = IniRead($CONFIGFILE, "su1x", "username", "123456")
+$domain = IniRead($CONFIGFILE, "su1x", "domain", "swansea.ac.uk")
 $proxy = IniRead($CONFIGFILE, "su1x", "proxy", "1")
 $browser_reset = IniRead($CONFIGFILE, "su1x", "browser_reset", "0")
 ;$SSID = IniRead($CONFIGFILE, "getprofile", "ssid", "eduroam")
@@ -939,6 +940,10 @@ Func SetEAPCred($thessid, $inttype, $interface)
 		Dim $pass = GUICtrlRead($passbutton)
 		;additional regex from ini maybe?
 
+		; support old style username, ignoring everything past @
+		$user = StringSplit ( $user, "@")
+		$user = $user[1]
+
 		;check username
 		If (StringInStr($user, "123456") > 0 Or StringLen($user) < 1) Then
 			UpdateProgress(10)
@@ -1620,7 +1625,7 @@ While 1
 			$progress_meter = 0;
 			;read in username and password
 			If ($showup > 0) Then
-				$user = GUICtrlRead($userbutton)
+				$user = GUICtrlRead($userbutton) & "@" & $domain
 				$pass = GUICtrlRead($passbutton)
 			EndIf
 			UpdateOutput("***Starting Checks***")
