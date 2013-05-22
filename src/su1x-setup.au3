@@ -273,7 +273,7 @@ Func ConfigWired1x()
 	UpdateProgress(20);
 	If IsObj($colItems) Then
 		For $objItem In $colItems
-			If ($objItem.AdapterType == "Ethernet 802.3") Then
+			If ($objItem.adapterType == "Ethernet 802.3") Then
 				If (StringInStr($objItem.netconnectionid, "Blue") == 0 And StringInStr($objItem.netconnectionid, "1394") == 0 And StringInStr($objItem.netconnectionid, "Wireless") == 0) Then
 					$adapter &= "*********************"
 					$adapter &= "Caption: " & $objItem.Caption & @CRLF
@@ -282,7 +282,7 @@ Func ConfigWired1x()
 					$adapter &= "NetID: " & $objItem.netconnectionid & @CRLF
 					$wired_interface = $objItem.netconnectionid
 					$adapter &= "Name: " & $objItem.name & @CRLF
-					$adapter &= "Type: " & $objItem.AdapterType & @CRLF
+					$adapter &= "Type: " & $objItem.adapterType & @CRLF
 					;Ethernet 802.3
 					$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
 					DoDebug("[setup] Applying profile to :" & $adapter)
@@ -295,7 +295,7 @@ Func ConfigWired1x()
 					UpdateProgress(20);
 					SetEAPCred("", 2, $wired_interface)
 				Else
-					DoDebug("[setup] " & $objItem.netconnectionid & "( " & $objItem.AdapterType & "," & $objItem.Description & ") does no match as LAN")
+					DoDebug("[setup] " & $objItem.netconnectionid & "( " & $objItem.adapterType & "," & $objItem.Description & ") does no match as LAN")
 				EndIf
 			Else
 				DoDebug("[setup] No 802.3 adapter found (" & $objItem.Caption & "," & $objItem.Description & ") ")
@@ -332,7 +332,7 @@ Func GetMac($adapterType)
 	$colItems = $objWMIService.ExecQuery($query, "WQL", 0x30)
 	If IsObj($colItems) Then
 		For $objItem In $colItems
-			If ($objItem.AdapterType == "Ethernet 802.3") Then
+			If ($objItem.adapterType == "Ethernet 802.3") Then
 				If (StringCompare($adapterType, "wireless") == 0) Then
 					If (StringInStr($objItem.description, "Wi") Or StringInStr($objItem.description, "Wireless") Or StringInStr($objItem.description, "802.11")) Then
 						DoDebug("[support]802.11 Adapter mac address found" & $objItem.MACAddress)
@@ -940,7 +940,7 @@ Func SetEAPCred($thessid, $inttype, $interface)
 		;additional regex from ini maybe?
 
 		; support old style username, ignoring everything past @
-		$user = StringSplit ( $user, "@")
+		$user = StringSplit($user, "@")
 		$user = $user[1]
 
 		;check username
@@ -1255,7 +1255,7 @@ Func BuildRadioMap()
 
 							;all ok then send off to locpris server
 							Dim $radio_url = $radioMap_url & "?mac=" & $wifi_tmp_mac & "&bssid=" & $radio_bssid & "&ssid=" & $radio_ssid & "&rss=" & $radio_signal & "&type=" & $radio_network_type
-							dodebug("url=" & $radio_url)
+							DoDebug("url=" & $radio_url)
 							Local $response = InetGet($radio_url, "", 1, 1)
 							If (@error) Then
 								DoDebug("Radio map upload error")
@@ -1263,7 +1263,7 @@ Func BuildRadioMap()
 
 						Else
 							$radio_bssid = "error"
-							dodebug("error with bssid")
+							DoDebug("error with bssid")
 							ExitLoop;
 						EndIf
 					EndIf
@@ -1591,7 +1591,7 @@ While 1
 			If ($USESPLASH == 1) Then SplashOff()
 			;exit tool on completiong if all successfull
 			If ($exitoncomplete > 0 And $probconnect = 0) Then
-				If (StringInStr($argument1, "silent") = 0 ) Then
+				If (StringInStr($argument1, "silent") = 0) Then
 					If $exitoncomplete < 2 Then
 						MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
 					EndIf
@@ -2012,7 +2012,7 @@ While 1
 				UpdateOutput("Removing Profile...")
 				If IsObj($colItems) Then
 					For $objItem In $colItems
-						If ($objItem.AdapterType == "Ethernet 802.3") Then
+						If ($objItem.adapterType == "Ethernet 802.3") Then
 							If (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
 								$adapter &= "Caption: " & $objItem.Caption & @CRLF
 								$adapter &= "Description: " & $objItem.Description & @CRLF
@@ -2020,7 +2020,7 @@ While 1
 								$adapter &= "NetID: " & $objItem.netconnectionid & @CRLF
 								$wired_interface = $objItem.netconnectionid
 								$adapter &= "Name: " & $objItem.name & @CRLF
-								$adapter &= "Type: " & $objItem.AdapterType & @CRLF
+								$adapter &= "Type: " & $objItem.adapterType & @CRLF
 								;Ethernet 802.3
 								$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
 								$adapter &= "*********************"
@@ -2283,4 +2283,4 @@ Func DoBeforeExit()
 		DoDump("****Tool Debug Output****")
 		DoDump($debugResult)
 	EndIf
-EndFunc
+EndFunc   ;==>DoBeforeExit
