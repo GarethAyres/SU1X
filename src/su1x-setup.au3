@@ -691,8 +691,6 @@ Func CloseWindows()
 EndFunc   ;==>CloseWindows
 
 Func CloseConnectWindows()
-	;first bring su1x to front
-	WinSetOnTop($title, "", 1)
 	$winexist = False
 	;If WinExists("[CLASS:tooltips_class32]") Then
 	;	$text = WinGetText("[CLASS:tooltips_class32]", "")
