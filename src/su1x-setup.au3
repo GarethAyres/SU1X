@@ -1607,7 +1607,6 @@ While 1
 		If ($msg == $support Or $msg == $gethelp) Then
 			;-------------------------------------------------------------------------
 			$output = ""
-			WinSetOnTop($title, "", 0)
 			UpdateProgress(10);
 			GUICtrlSetData($progressbar1, 0)
 			$progress_meter = 0;
@@ -1965,7 +1964,6 @@ While 1
 				If ($msg == $gethelp And StringLen($report_problem_url) > 0) Then
 					;open help website
 					$ynresponse = MsgBox(4, "Report a Problem", "Would you like to report a problem? Click YES to open the Problem Reporting website.")
-					WinSetOnTop("Report a Problem", "", 1)
 					If ($ynresponse == 6) Then
 						ShellExecute($report_problem_url)
 					EndIf
@@ -1984,8 +1982,6 @@ While 1
 			;-------------------------------------------------------------------------
 			; All done...
 			$msg = ""
-			;ExitLoop
-			WinSetOnTop($title, "", 1)
 		EndIf
 
 		;***************************************************************************************REMOVE EDUROAM
