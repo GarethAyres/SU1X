@@ -1,5 +1,14 @@
 ; SU1X Change log
 ;
+; ** 21/05/2013
+;
+;	FEATURE allow usernames without domain
+;	FEATURE silent exit on success (without prompting)
+;	FIX program hotkeys are only captured from the script window
+;	FIX window is no longer needlessly always on top, obscuring error messages
+;	FIX replace exit button with exit routine
+;	FIX other bug fixes (see logs)
+;
 ; ** 14/12/2012
 ;	Fixed bug with ssid with underscores in it
 ;

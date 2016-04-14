@@ -51,6 +51,7 @@
 #include <GuiListView.au3>
 #include <String.au3>
 
+OnAutoItExitRegister("DoBeforeExit")
 
 ;-------------------------------------------------------------------------
 ; Global variables and stuff
@@ -77,7 +78,8 @@ $startText = IniRead($CONFIGFILE, "su1x", "startText", "SWIS")
 $title = IniRead($CONFIGFILE, "su1x", "title", "SWIS Eduroam - Setup Tool")
 $hint = IniRead($CONFIGFILE, "su1x", "hint", "0")
 $exitoncomplete = IniRead($CONFIGFILE, "su1x", "exit_on_complete", "0")
-$username = IniRead($CONFIGFILE, "su1x", "username", "123456@swansea.ac.uk")
+$username = IniRead($CONFIGFILE, "su1x", "username", "123456")
+$domain = IniRead($CONFIGFILE, "su1x", "domain", "swansea.ac.uk")
 $proxy = IniRead($CONFIGFILE, "su1x", "proxy", "1")
 $browser_reset = IniRead($CONFIGFILE, "su1x", "browser_reset", "0")
 ;$SSID = IniRead($CONFIGFILE, "getprofile", "ssid", "eduroam")
@@ -132,6 +134,7 @@ $report_problem_url = IniRead($CONFIGFILE, "support", "report_problem_url", "")
 $radioMap = IniRead($CONFIGFILE, "support", "radioMap", "0")
 $radioMap_url = IniRead($CONFIGFILE, "support", "radioMap_url", "")
 
+
 ;------------------------------------------------------------------------------------------------------------
 ;---------Variable Initialisation
 ;------------------------------------------------------------------------------------------------------------
@@ -175,6 +178,8 @@ Global $hClientHandle = 0
 Global $pGUID = 0
 Global $Enum
 Dim $user_enter = 0
+
+
 
 ;------------------------------------------------------------------------------------------------
 ;Set up Debugging
@@ -268,7 +273,7 @@ Func ConfigWired1x()
 	UpdateProgress(20);
 	If IsObj($colItems) Then
 		For $objItem In $colItems
-			If ($objItem.AdapterType == "Ethernet 802.3") Then
+			If ($objItem.adapterType == "Ethernet 802.3") Then
 				If (StringInStr($objItem.netconnectionid, "Blue") == 0 And StringInStr($objItem.netconnectionid, "1394") == 0 And StringInStr($objItem.netconnectionid, "Wireless") == 0) Then
 					$adapter &= "*********************"
 					$adapter &= "Caption: " & $objItem.Caption & @CRLF
@@ -277,7 +282,7 @@ Func ConfigWired1x()
 					$adapter &= "NetID: " & $objItem.netconnectionid & @CRLF
 					$wired_interface = $objItem.netconnectionid
 					$adapter &= "Name: " & $objItem.name & @CRLF
-					$adapter &= "Type: " & $objItem.AdapterType & @CRLF
+					$adapter &= "Type: " & $objItem.adapterType & @CRLF
 					;Ethernet 802.3
 					$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
 					DoDebug("[setup] Applying profile to :" & $adapter)
@@ -290,7 +295,7 @@ Func ConfigWired1x()
 					UpdateProgress(20);
 					SetEAPCred("", 2, $wired_interface)
 				Else
-					DoDebug("[setup] " & $objItem.netconnectionid & "( " & $objItem.AdapterType & "," & $objItem.Description & ") does no match as LAN")
+					DoDebug("[setup] " & $objItem.netconnectionid & "( " & $objItem.adapterType & "," & $objItem.Description & ") does no match as LAN")
 				EndIf
 			Else
 				DoDebug("[setup] No 802.3 adapter found (" & $objItem.Caption & "," & $objItem.Description & ") ")
@@ -327,7 +332,7 @@ Func GetMac($adapterType)
 	$colItems = $objWMIService.ExecQuery($query, "WQL", 0x30)
 	If IsObj($colItems) Then
 		For $objItem In $colItems
-			If ($objItem.AdapterType == "Ethernet 802.3") Then
+			If ($objItem.adapterType == "Ethernet 802.3") Then
 				If (StringCompare($adapterType, "wireless") == 0) Then
 					If (StringInStr($objItem.description, "Wi") Or StringInStr($objItem.description, "Wireless") Or StringInStr($objItem.description, "802.11")) Then
 						DoDebug("[support]802.11 Adapter mac address found" & $objItem.MACAddress)
@@ -668,7 +673,7 @@ EndFunc   ;==>UpdateProgress
 
 ;output to edit box
 Func UpdateOutput($output)
-	GUICtrlSetData($myedit, $output & @CRLF, @CRLF)
+	GUICtrlSetData($myedit, @CRLF & $output, @CRLF)
 	DoDebug("UserOutput:" & $output)
 EndFunc   ;==>UpdateOutput
 
@@ -687,8 +692,6 @@ Func CloseWindows()
 EndFunc   ;==>CloseWindows
 
 Func CloseConnectWindows()
-	;first bring su1x to front
-	WinSetOnTop($title, "", 1)
 	$winexist = False
 	;If WinExists("[CLASS:tooltips_class32]") Then
 	;	$text = WinGetText("[CLASS:tooltips_class32]", "")
@@ -935,6 +938,10 @@ Func SetEAPCred($thessid, $inttype, $interface)
 		Dim $user = GUICtrlRead($userbutton)
 		Dim $pass = GUICtrlRead($passbutton)
 		;additional regex from ini maybe?
+
+		; support old style username, ignoring everything past @
+		$user = StringSplit($user, "@")
+		$user = $user[1]
 
 		;check username
 		If (StringInStr($user, "123456") > 0 Or StringLen($user) < 1) Then
@@ -1243,13 +1250,12 @@ Func BuildRadioMap()
 									$sub = StringReplace($sub, "802.11", "")
 									$radio_network_type = $sub
 								EndIf
-
 								If @error = -1 Then ExitLoop
 							Next
 
 							;all ok then send off to locpris server
 							Dim $radio_url = $radioMap_url & "?mac=" & $wifi_tmp_mac & "&bssid=" & $radio_bssid & "&ssid=" & $radio_ssid & "&rss=" & $radio_signal & "&type=" & $radio_network_type
-							dodebug("url=" & $radio_url)
+							DoDebug("url=" & $radio_url)
 							Local $response = InetGet($radio_url, "", 1, 1)
 							If (@error) Then
 								DoDebug("Radio map upload error")
@@ -1257,7 +1263,7 @@ Func BuildRadioMap()
 
 						Else
 							$radio_bssid = "error"
-							dodebug("error with bssid")
+							DoDebug("error with bssid")
 							ExitLoop;
 						EndIf
 					EndIf
@@ -1288,28 +1294,25 @@ CheckAdmin()
 alreadyRunning()
 GUICreate($title, 294, 310)
 GUISetBkColor(0xffffff) ;---------------------------------white
-$n = GUICtrlCreatePic($BANNER, 0, 0, 294, 54) ;--------pic
+$n = GUICtrlCreatePic($BANNER, 0, 0, 295, 60) ;--------pic
 If ($showup > 0) Then
-	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 70, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
+	$myedit = GUICtrlCreateEdit($startText, 10, 70, 270, 70, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
 	GUICtrlCreateLabel("Username:", 10, 145, 60, 20)
 	GUICtrlCreateLabel("Password:", 165, 145, 60, 20)
 	$userbutton = GUICtrlCreateInput($username, 10, 160, 150, 20)
-	$passbutton = GUICtrlCreateInput("password", 165, 160, 120, 20, BitOR($GUI_SS_DEFAULT_INPUT, $ES_PASSWORD))
+	$passbutton = GUICtrlCreateInput("", 165, 160, 120, 20, BitOR($GUI_SS_DEFAULT_INPUT, $ES_PASSWORD))
 	GUICtrlSendMsg($passbutton, 0x00CC, 42, 0)
 	;GUICtrlSetData($passbutton, $GUI_FOCUS)
 	If ($showuptick > 0) Then
 		$showPass = GUICtrlCreateCheckbox("Show Password", 170, 185, 100, 20)
 	EndIf
-	;set hotkey for enter press, so connected on enter press
-	HotKeySet("{ENTER}", "SetHotkeyAuth")
 Else
 	$showuptick = 0
 	;showuptick must be 0 if showup 0, force set to avoid bad config
-	$myedit = GUICtrlCreateEdit($startText & @CRLF, 10, 70, 270, 130, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
+	$myedit = GUICtrlCreateEdit($startText, 10, 70, 270, 130, $ES_MULTILINE + $ES_AUTOVSCROLL + $WS_VSCROLL + $ES_READONLY)
 EndIf
 GUICtrlCreateLabel("Progress:", 15, 210, 48, 20)
 $progressbar1 = GUICtrlCreateProgress(65, 210, 200, 20)
-$exitb = GUICtrlCreateButton("Exit", 230, 270, 50)
 ;-------------------------------------------------------------------------
 ;TABS
 $tab = GUICtrlCreateTab(1, 240, 292, 70)
@@ -1345,7 +1348,11 @@ If ($show_printing == 0) Then GUICtrlDelete($tab2)
 If ($show_support == 0) Then GUICtrlDelete($tab3)
 ;$unInstallb = GUICtrlCreateButton("Remove", 80, 280, 50)
 ;$backupb = GUICtrlCreateButton("Check", 160,280,50)
-;-----------------------------------------------------------
+
+;set hotkey for enter press, so connected on enter press
+Local $AccelKeys[1][2] = [["{ENTER}", $installb]]
+GUISetAccelerators($AccelKeys)
+
 GUISetState(@SW_SHOW)
 ;-----------------------------------------------------------
 ;START MAIN LOOP
@@ -1361,21 +1368,7 @@ While 1
 			$checkbox = 0
 		EndIf
 		;-----------------------------------------------------------Exit Tool
-		If $msg == $exitb Then
-			WlanAPIClose()
-			DoDebug("***Exiting SU1X***")
-			Exit
-			ExitLoop
-		EndIf
-
 		If $msg == $GUI_EVENT_CLOSE Then
-			WlanAPIClose()
-			DoDebug("***Exiting SU1X***")
-			;close file if dump set
-			If ($DEBUG > 0) Then
-				DoDump("****Tool Debug Output****")
-				DoDump($debugResult)
-			EndIf
 			Exit
 		EndIf
 
@@ -1597,9 +1590,13 @@ While 1
 			;Setup all done, display hint if hint set and turn off splash if on
 			If ($USESPLASH == 1) Then SplashOff()
 			;exit tool on completiong if all successfull
-			If ($exitoncomplete == 1 And $probconnect == 0) Then
-				If (StringInStr($argument1, "silent") == 0) Then MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
-				Exit
+			If ($exitoncomplete > 0 And $probconnect = 0) Then
+				If (StringInStr($argument1, "silent") = 0) Then
+					If $exitoncomplete < 2 Then
+						MsgBox(1, $SSID & "Success", "Installation successful! Exiting...")
+					EndIf
+					Exit
+				EndIf
 			EndIf
 		EndIf
 		;-------------------------------------------------------------------------
@@ -1610,13 +1607,12 @@ While 1
 		If ($msg == $support Or $msg == $gethelp) Then
 			;-------------------------------------------------------------------------
 			$output = ""
-			WinSetOnTop($title, "", 0)
 			UpdateProgress(10);
 			GUICtrlSetData($progressbar1, 0)
 			$progress_meter = 0;
 			;read in username and password
 			If ($showup > 0) Then
-				$user = GUICtrlRead($userbutton)
+				$user = GUICtrlRead($userbutton) & "@" & $domain
 				$pass = GUICtrlRead($passbutton)
 			EndIf
 			UpdateOutput("***Starting Checks***")
@@ -1968,7 +1964,6 @@ While 1
 				If ($msg == $gethelp And StringLen($report_problem_url) > 0) Then
 					;open help website
 					$ynresponse = MsgBox(4, "Report a Problem", "Would you like to report a problem? Click YES to open the Problem Reporting website.")
-					WinSetOnTop("Report a Problem", "", 1)
 					If ($ynresponse == 6) Then
 						ShellExecute($report_problem_url)
 					EndIf
@@ -1987,8 +1982,6 @@ While 1
 			;-------------------------------------------------------------------------
 			; All done...
 			$msg = ""
-			;ExitLoop
-			WinSetOnTop($title, "", 1)
 		EndIf
 
 		;***************************************************************************************REMOVE EDUROAM
@@ -2019,7 +2012,7 @@ While 1
 				UpdateOutput("Removing Profile...")
 				If IsObj($colItems) Then
 					For $objItem In $colItems
-						If ($objItem.AdapterType == "Ethernet 802.3") Then
+						If ($objItem.adapterType == "Ethernet 802.3") Then
 							If (StringInStr($objItem.netconnectionid, "Local") And StringInStr($objItem.description, "Blue") == 0 And StringInStr($objItem.description, "1394") == 0 And StringInStr($objItem.description, "Wireless") == 0) Then
 								$adapter &= "Caption: " & $objItem.Caption & @CRLF
 								$adapter &= "Description: " & $objItem.Description & @CRLF
@@ -2027,7 +2020,7 @@ While 1
 								$adapter &= "NetID: " & $objItem.netconnectionid & @CRLF
 								$wired_interface = $objItem.netconnectionid
 								$adapter &= "Name: " & $objItem.name & @CRLF
-								$adapter &= "Type: " & $objItem.AdapterType & @CRLF
+								$adapter &= "Type: " & $objItem.adapterType & @CRLF
 								;Ethernet 802.3
 								$adapter &= "MAC Address: " & $objItem.MACAddress & @CRLF
 								$adapter &= "*********************"
@@ -2282,3 +2275,12 @@ WEnd
 
 Exit
 
+Func DoBeforeExit()
+	WlanAPIClose()
+	DoDebug("***Exiting SU1X***")
+	;close file if dump set
+	If ($DEBUG > 0) Then
+		DoDump("****Tool Debug Output****")
+		DoDump($debugResult)
+	EndIf
+EndFunc   ;==>DoBeforeExit
